@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Null Electric Calc v1.42</title>
+
+<style>
+    body {
+        margin: 0;
+        padding: 20px;
+        background: #f7f7f7;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+        color: #111;
+    }
+
+    h1 {
+        font-size: 26px;
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+
+    .card {
+        background: #fff;
+        padding: 18px;
+        border-radius: 22px;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+
+    .section-title {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 12px;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 12px;
+        text-align: center;
+        border-radius: 18px;
+        border: 1px solid #ddd;
+        background: #fff;
+        font-size: 15px;
+        font-weight: 600;
+        transition: .1s;
+        user-select: none;
+    }
+
+    .btn.active {
+        background: #111;
+        color: #fff;
+    }
+
+    .btn:active {
+        transform: scale(.97);
+    }
+
+    .input-field {
+        width: 100%;
+        padding: 14px;
+        border-radius: 16px;
+        border: 1px solid #ccc;
+        font-size: 16px;
+        margin-top: 8px;
+    }
+
+    .result-card {
+        position: relative;
+        background: #111;
+        color: #fff;
+        padding: 50px 25px;
+        border-radius: 22px;
+        text-align: center;
+        margin-top: 20px;
+        min-height: 140px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    }
+
+    .result-main {
+        font-size: 34px;
+        font-weight: 800;
+        margin-bottom: 10px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .result-sub {
+        font-size: 17px;
+        opacity: .85;
+        position: relative;
+        z-index: 2;
+    }
+
+    /* Null watermark */
+    .null-watermark {
+        position: absolute;
+        top: 52%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 38px;
+        font-weight: 300;
+        color: rgba(255,255,255,0.3);
+        opacity: 0.3;
+        transition: 0.25s ease-out;
+        user-select: none;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .hide { display: none; }
+</style>
+</head>
+
+<body>
+
+<h1>Null Electric Calc</h1>
+
+<!-- Mode Select -->
+<div class="card">
+    <div class="section-title">計算モード</div>
+    <div class="btn-group" id="modeGroup">
+        <div class="btn active" data-mode="kwA">kW → A</div>
+        <div class="btn" data-mode="AkW">A → kW</div>
+        <div class="btn" data-mode="Awire">A → 電線サイズ</div>
+    </div>
+</div>
+
+<!-- Voltage -->
+<div class="card" id="voltageCard">
+    <div class="section-title">電圧</div>
+    <div class="btn-group" id="voltGroup">
+        <div class="btn active">100V</div>
+        <div class="btn">200V</div>
+    </div>
+</div>
+
+<!-- Wire -->
+<div class="card hide" id="wireCard">
+    <div class="section-title">電線種類</div>
+    <div class="btn-group" id="wireGroup">
+        <div class="btn active">VVF</div>
+        <div class="btn">EM</div>
+        <div class="btn">IV</div>
+        <div class="btn">CV</div>
+        <div class="btn">CVT</div>
+    </div>
+</div>
+
+<!-- Input -->
+<div class="card">
+    <div class="section-title" id="inputLabel">負荷（kW）</div>
+    <input type="number" id="inputValue" class="input-field" placeholder="数値を入力してください">
+</div>
+
+<!-- Result -->
+<div class="result-card">
+    <div class="null-watermark" id="nullWatermark">Null</div>
+    <div class="result-main" id="resultMain">0.0</div>
+    <div class="result-sub" id="resultSub">計算待ち</div>
+</div>
+
+<script>
+let mode = "kwA";
+
+/* Formal capacity tables */
+const wireTable = {
+    VVF: [
+        {size:"1.6mm", amp:18},
+        {size:"2.0mm", amp:23},
+        {size:"2.6mm", amp:30},
+    ],
+    EM: [
+        {size:"1.6mm", amp:18},
+        {size:"2.0mm", amp:23},
+        {size:"2.6mm", amp:30},
+    ],
+    IV: [
+        {size:"1.25sq", amp:17},
+        {size:"2sq", amp:24},
+        {size:"3.5sq", amp:32},
+        {size:"5.5sq", amp:42},
+        {size:"8sq", amp:55},
+        {size:"14sq", amp:85},
+        {size:"22sq", amp:115},
+        {size:"38sq", amp:150},
+        {size:"60sq", amp:190},
+        {size:"100sq", amp:260},
+        {size:"150sq", amp:325},
+        {size:"200sq", amp:380},
+        {size:"250sq", amp:430},
+        {size:"325sq", amp:490},
+    ],
+    CV: [
+        {size:"2sq", amp:21},
+        {size:"3.5sq", amp:30},
+        {size:"5.5sq", amp:42},
+        {size:"8sq", amp:55},
+        {size:"14sq", amp:85},
+        {size:"22sq", amp:110},
+        {size:"38sq", amp:150},
+        {size:"60sq", amp:190},
+        {size:"100sq", amp:240},
+        {size:"150sq", amp:300},
+        {size:"200sq", amp:360},
+        {size:"250sq", amp:415},
+        {size:"325sq", amp:480},
+    ],
+    CVT: [
+		{size:"14sq", amp:85},
+        {size:"22sq", amp:105},
+        {size:"38sq", amp:140},
+        {size:"60sq", amp:180},
+        {size:"100sq", amp:235},
+        {size:"150sq", amp:295},
+        {size:"200sq", amp:350},
+        {size:"250sq", amp:410},
+        {size:"325sq", amp:470},
+    ]
+};
+
+/* UI Switching */
+function updateUI() {
+    const voltageCard = document.getElementById("voltageCard");
+    const wireCard = document.getElementById("wireCard");
+    const inputLabel = document.getElementById("inputLabel");
+
+    if (mode === "kwA") {
+        voltageCard.classList.remove("hide");
+        wireCard.classList.add("hide");
+        inputLabel.textContent = "負荷（kW）";
+    }
+
+    if (mode === "AkW") {
+        voltageCard.classList.remove("hide");
+        wireCard.classList.add("hide");
+        inputLabel.textContent = "電流（A）";
+    }
+
+    if (mode === "Awire") {
+        voltageCard.classList.add("hide");
+        wireCard.classList.remove("hide");
+        inputLabel.textContent = "電流（A）";
+    }
+}
+
+/* Mode */
+document.querySelectorAll("#modeGroup .btn").forEach(btn=>{
+    btn.onclick = ()=>{
+        document.querySelectorAll("#modeGroup .btn").forEach(x=>x.classList.remove("active"));
+        btn.classList.add("active");
+        mode = btn.dataset.mode;
+        updateUI();
+        calc();
+    };
+});
+
+/* Voltage & Wire Select */
+document.querySelectorAll("#voltGroup .btn").forEach(btn=>{
+    btn.onclick = ()=>{ activate("voltGroup", btn); calc(); };
+});
+document.querySelectorAll("#wireGroup .btn").forEach(btn=>{
+    btn.onclick = ()=>{ activate("wireGroup", btn); calc(); };
+});
+
+function activate(group, btn){
+    document.querySelectorAll("#"+group+" .btn").forEach(x=>x.classList.remove("active"));
+    btn.classList.add("active");
+}
+
+/* Input */
+document.getElementById("inputValue").oninput = calc;
+
+/* Calculator */
+function calc(){
+    const val = parseFloat(document.getElementById("inputValue").value);
+    const resultMain = document.getElementById("resultMain");
+    const resultSub = document.getElementById("resultSub");
+    const wm = document.getElementById("nullWatermark");
+
+    if (isNaN(val) || val <= 0){
+        resultMain.textContent = "0.0";
+        resultSub.textContent = "計算待ち";
+        wm.style.opacity = 0.3;
+        return;
+    }
+
+    wm.style.opacity = 0;
+
+    if(mode === "kwA"){
+        const V = parseFloat(document.querySelector("#voltGroup .btn.active").textContent);
+        const A = (val * 1000) / V;
+        resultMain.textContent = A.toFixed(1) + " A";
+        resultSub.textContent = `${V}Vで換算`;
+        return;
+    }
+
+    if(mode === "AkW"){
+        const V = parseFloat(document.querySelector("#voltGroup .btn.active").textContent);
+        const kW = (val * V) / 1000;
+        resultMain.textContent = kW.toFixed(2) + " kW";
+        resultSub.textContent = `${V}Vで換算`;
+        return;
+    }
+
+    if(mode === "Awire"){
+        const wire = document.querySelector("#wireGroup .btn.active").textContent;
+        const list = wireTable[wire];
+
+        // ▼ VVF / EM の上限（30A固定）
+        if (wire === "VVF" || wire === "EM") {
+            if (val > 30) {
+                resultMain.textContent = "N/A";
+                resultSub.textContent = "Max capacity: 30A";
+                return;
+            }
+        }
+
+        // ▼ その他線種は最大許容チェック
+        const maxAmp = list[list.length - 1].amp;
+        if (val > maxAmp) {
+            resultMain.textContent = "N/A";
+            resultSub.textContent = `Max capacity: ${maxAmp}A`;
+            return;
+        }
+
+        // ▼ 適切なサイズ選定
+        let chosen = list[list.length - 1];
+        for (const x of list){
+            if(val <= x.amp){ chosen = x; break; }
+        }
+
+        resultMain.textContent = chosen.size;
+        resultSub.textContent = `Allowable current: ${chosen.amp}A`;
+    }
+}
+</script>
+
+</body>
+</html>
