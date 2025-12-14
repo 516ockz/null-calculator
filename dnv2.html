@@ -14,6 +14,7 @@
       --muted:rgba(233,238,252,.65);
       --shadow:0 10px 30px rgba(0,0,0,.35);
       --r2:22px;
+
       --ok: rgba(38, 255, 170, .85);
       --ng: rgba(255, 90, 90, .9);
       --warn: rgba(255, 210, 90, .95);
@@ -75,12 +76,11 @@
       outline:none;
       transition:border-color .15s ease, box-shadow .15s ease;
     }
-    /* 入力済み感 */
-    input.filled, select.filled{
+    input::placeholder{ color:rgba(233,238,252,.35); }
+    input.filled{
       border-color: var(--bd2);
       box-shadow: 0 0 0 3px rgba(255,255,255,.04);
     }
-    input::placeholder{ color:rgba(233,238,252,.35); }
 
     .row{
       display:flex;
@@ -169,7 +169,7 @@
           <label>Mode</label>
           <select id="mode">
             <option value="kw-to-a">kW → A</option>
-            <option value="vdrop">V-drop</option>
+            <option value="i-and-dist">I + 距離 → sq（電圧降下含む）</option>
           </select>
         </div>
         <div>
@@ -211,13 +211,9 @@
         </div>
 
         <div>
-          <label>Margin</label>
-          <select id="margin">
-            <option value="1.00">0%</option>
-            <option value="1.10" selected>10%</option>
-            <option value="1.20">20%</option>
-          </select>
-          <div class="hint">推奨sqは「I×マージン」で判定</div>
+          <label>V-drop limit</label>
+          <input value="2.0%（固定）" disabled />
+          <div class="hint">電圧降下は実電流Iで評価</div>
         </div>
       </div>
 
@@ -226,18 +222,22 @@
       <div id="kw-to-a">
         <label>Power (kW)</label>
         <input id="kw" inputmode="decimal" placeholder="5.5" />
+        <div class="hint">力率PF=0.85固定</div>
       </div>
 
-      <div id="vdrop" style="display:none">
+      <div id="i-and-dist" style="display:none">
         <div class="row">
           <div>
             <label>Current (A)</label>
-            <input id="ampVD" inputmode="decimal" placeholder="30" />
+            <input id="ampIn" inputmode="decimal" placeholder="30" />
           </div>
           <div>
             <label>Distance (m)（片道）</label>
             <input id="dist" inputmode="decimal" placeholder="50" />
           </div>
+        </div>
+        <div class="hint">
+          電圧降下は ρ=0.01724（Cu）で簡易計算
         </div>
       </div>
 
@@ -248,9 +248,9 @@
       <div class="kpi" id="kpi">—</div>
       <div class="kpi-sub" id="kpiSub">Ready</div>
 
-      <div class="pill" id="ampacityPill" style="display:none">
-        <span class="dot warn" id="ampDot"></span>
-        <span id="ampText">推奨sq: —</span>
+      <div class="pill" id="pill" style="display:none">
+        <span class="dot warn" id="dot"></span>
+        <span id="pillText">—</span>
       </div>
 
       <div class="mono" id="detail">
@@ -263,9 +263,8 @@ V: —
         <summary>使い方・計算条件</summary>
         <ul>
           <li>入力すると自動で計算されます（ボタン無し）</li>
-          <li>kW → A は電気入力の基本式（力率のみ反映）</li>
-          <li>V-drop は電流入力ルート（sq無しのため電圧降下計算は未実装）</li>
-          <li>推奨sqは「I×マージン ≤ 許容電流（表）」で最小サイズを提案</li>
+          <li>推奨sqは「許容電流 + 電圧降下(2%)」を両方満たす最小サイズ</li>
+          <li>許容電流・電圧降下ともに “実電流I” で評価（マージン無し）</li>
         </ul>
         <p class="hint">
           ※実際の布設（管内/多条/集積/周囲温度上昇/盤内等）は低減や別途検討が必要
@@ -281,11 +280,13 @@ V: —
 
 <script>
 (() => {
-  const VERSION = "basic-final-1.3.1-ui-clean";
+  const VERSION = "basic-final-1.4.1-no-margin";
   const $ = id => document.getElementById(id);
 
-  // 固定条件（Basic）
+  // 固定条件
   const PF = 0.85;
+  const RHO = 0.01724;           // Ω·mm²/m
+  const VDROP_LIMIT_PCT = 2.0;   // %
 
   // ===== 許容電流テーブル（固定条件） =====
   const AMP_CV_40C = {
@@ -321,10 +322,18 @@ V: —
     return Number.isFinite(x) ? x : null;
   };
 
+  function refreshFilled(){
+    document.querySelectorAll("input").forEach(el=>{
+      const hasValue = String(el.value||"").trim().length>0;
+      if (hasValue) el.classList.add("filled");
+      else el.classList.remove("filled");
+    });
+  }
+
   function showPanels(){
     const m = $("mode").value;
     $("kw-to-a").style.display = (m==="kw-to-a") ? "block" : "none";
-    $("vdrop").style.display  = (m==="vdrop")  ? "block" : "none";
+    $("i-and-dist").style.display  = (m==="i-and-dist")  ? "block" : "none";
 
     const cable = $("cable").value;
     $("coresWrap").style.display = (cable==="cv") ? "block" : "none";
@@ -358,113 +367,146 @@ V: —
     return null;
   }
 
-  function suggestSq(I){
+  function calcVdrop(V, phase, I, L_oneway_m, sq){
+    if (!V || !I || !L_oneway_m || !sq) return null;
+    const R = RHO * L_oneway_m / sq;
+    const dV = (phase==="three") ? (Math.sqrt(3) * I * R) : (2 * I * R);
+    const pct = (dV / V) * 100;
+    const Vload = V - dV;
+    return { dV, pct, Vload };
+  }
+
+  // 推奨sq：許容電流(Iそのまま) + 電圧降下(2%) を両方満たす最小
+  function suggestSq(I, V, phase, L){
     if (!Number.isFinite(I) || I<=0) return null;
 
-    const margin = num($("margin").value) ?? 1.10;
-    const need = I * margin;
+    const hasDrop = Number.isFinite(V) && V>0 && Number.isFinite(L) && L>0;
 
     const cands = listCandidates();
     for (let i=0; i<cands.length; i++){
       const sq = cands[i];
       const amp = getAmpBySq(sq);
-      if (Number.isFinite(amp) && need <= amp) {
-        const next = cands[i+1] ?? null;
-        const nextAmp = next ? getAmpBySq(next) : null;
-        return {need, sq, amp, next, nextAmp};
+      if (!Number.isFinite(amp)) continue;
+
+      // 条件A：許容電流（実数I）
+      if (I > amp) continue;
+
+      // 条件B：電圧降下（距離があるときだけ）
+      let drop = null;
+      if (hasDrop){
+        drop = calcVdrop(V, phase, I, L, sq);
+        if (drop && drop.pct > VDROP_LIMIT_PCT) continue;
       }
+
+      const next = cands[i+1] ?? null;
+      const nextAmp = next ? getAmpBySq(next) : null;
+      const nextDrop = (hasDrop && next) ? calcVdrop(V, phase, I, L, next) : null;
+
+      return { sq, amp, drop, next, nextAmp, nextDrop, hasDrop };
     }
+
     const maxSq = cands[cands.length-1] ?? null;
     const maxAmp = maxSq ? getAmpBySq(maxSq) : null;
-    return {need, sq:null, amp:null, next:null, nextAmp:null, maxSq, maxAmp};
+    const maxDrop = (hasDrop && maxSq) ? calcVdrop(V, phase, I, L, maxSq) : null;
+    return { sq:null, amp:null, drop:null, next:null, nextAmp:null, nextDrop:null, maxSq, maxAmp, maxDrop, hasDrop };
   }
 
-  function setSuggestUI(res, I){
-    const pill = $("ampacityPill");
-    const dot = $("ampDot");
-    const txt = $("ampText");
+  function setResultUI({I, V, phase, L, sug, mode}){
+    const kpi = $("kpi");
+    const sub = $("kpiSub");
+    const pill = $("pill");
+    const dot = $("dot");
+    const pillText = $("pillText");
+    const detail = $("detail");
 
-    if (!res){
+    const cable = $("cable").value;
+    const cores = (cable==="cv") ? $("cores").value : "—";
+
+    detail.textContent =
+`Mode: ${mode}
+Phase: ${phase}
+V: ${V ?? "—"}
+Cable: ${cable}${(cable==="cv")?` (${cores}C)`:""}
+I: ${Number.isFinite(I) ? I.toFixed(2) : "—"}
+L(one-way): ${Number.isFinite(L) ? L : "—"}
+Ver: ${VERSION}`;
+
+    if (!Number.isFinite(I) || !Number.isFinite(V)){
+      kpi.textContent = "—";
+      sub.textContent = "Ready";
       pill.style.display = "none";
       return;
     }
-    pill.style.display = "inline-flex";
 
-    if (res.sq){
+    if (!sug){
+      kpi.textContent = "—";
+      sub.textContent = "入力不足";
+      pill.style.display = "none";
+      return;
+    }
+
+    if (sug.sq){
+      kpi.textContent = `${sug.sq} sq`;
+
+      if (sug.drop){
+        sub.textContent = `Vload ${sug.drop.Vload.toFixed(1)}V / ΔV ${sug.drop.pct.toFixed(2)}%`;
+      } else {
+        sub.textContent = "推奨sq（許容電流ベース）";
+      }
+
+      pill.style.display = "inline-flex";
       dot.className = "dot ok";
-      const nextStr = res.next ? ` / 余裕: ${res.next}sq（${res.nextAmp}A）` : "";
-      txt.textContent =
-        `推奨: ${res.sq}sq（許容 ${res.amp}A）${nextStr} / 必要 ${res.need.toFixed(1)}A（I=${I.toFixed(1)}A）`;
+
+      const ampStr = `許容 ${sug.amp}A`;
+      const dropStr = sug.drop ? ` / ΔV ${sug.drop.dV.toFixed(1)}V（${sug.drop.pct.toFixed(2)}%）` : "";
+      const nextStr = sug.next ? (() => {
+        const nd = sug.nextDrop ? ` / ΔV ${sug.nextDrop.pct.toFixed(2)}%` : "";
+        return ` / 余裕 ${sug.next}sq（${sug.nextAmp}A${nd}）`;
+      })() : "";
+
+      pillText.textContent = `I=${I.toFixed(1)}A ≤ ${ampStr}${dropStr}${nextStr}`;
+
     } else {
+      kpi.textContent = "NG";
+      if (sug.maxDrop){
+        sub.textContent = `最大 ${sug.maxSq}sqでも不足 / ΔV ${sug.maxDrop.pct.toFixed(2)}%`;
+      } else {
+        sub.textContent = `最大 ${sug.maxSq}sqでも許容電流不足`;
+      }
+
+      pill.style.display = "inline-flex";
       dot.className = "dot ng";
-      txt.textContent =
-        `NG: 最大でも不足 / 必要 ${res.need.toFixed(1)}A（I=${I.toFixed(1)}A） / 最大 ${res.maxSq}sq（${res.maxAmp}A）`;
+      const maxAmpStr = sug.maxAmp ? `${sug.maxAmp}A` : "—";
+      pillText.textContent = `I=${I.toFixed(1)}A / 最大 ${sug.maxSq}sq（許容 ${maxAmpStr}）`;
     }
   }
 
-  function refreshFilled(){
-    document.querySelectorAll("input,select").forEach(el=>{
-      const isInput = el.tagName.toLowerCase()==="input";
-      const hasValue = isInput ? (String(el.value||"").trim().length>0) : true;
-      // selectは常に選択されてるので「filled」を付けると全部強く見える
-      // なのでinputだけ強調
-      if (isInput && hasValue) el.classList.add("filled");
-      else el.classList.remove("filled");
-    });
-  }
-
   function calc(){
-    const mode  = $("mode").value;
+    const mode = $("mode").value;
     const phase = $("phase").value;
-    const cable = $("cable").value;
-    const cores = (cable==="cv") ? $("cores").value : "—";
 
     const V = num($("voltage").value);
     const root = phase==="three" ? Math.sqrt(3) : 1;
 
-    let kpi = "—";
-    let sub = "Ready";
+    let I = null;
+    let L = null;
 
-    let detail = `Mode: ${mode}
-Phase: ${phase}
-V: ${V ?? "—"}
-Cable: ${cable}${(cable==="cv")?` (${cores}C)`:""}
-Ver: ${VERSION}`;
-
-    let Icheck = null;
-
-    if (mode === "kw-to-a") {
+    if (mode === "kw-to-a"){
       const kW = num($("kw").value);
-      if (V && kW) {
-        const I = (kW*1000) / (V*root*PF);
-        Icheck = I;
-        kpi = I.toFixed(2) + " A";
-        sub = "kW → A";
-      } else {
-        sub = "Voltage と kW を入力";
+      if (Number.isFinite(V) && Number.isFinite(kW)) {
+        I = (kW*1000) / (V*root*PF);
       }
+      L = null; // このモードは距離入力なし
+    } else {
+      I = num($("ampIn").value);
+      L = num($("dist").value);
     }
 
-    if (mode === "vdrop") {
-      const I = num($("ampVD").value);
-      const L = num($("dist").value);
-      detail += `\nI: ${I ?? "—"}  L(one-way): ${L ?? "—"}`;
-      if (V && I && L) {
-        Icheck = I;
-        kpi = I.toFixed(1) + " A";
-        sub = "電流入力モード（sq提案）";
-      } else {
-        sub = "Voltage / Current / Distance を入力";
-      }
-    }
+    const sug = (Number.isFinite(I) && Number.isFinite(V))
+      ? suggestSq(I, V, phase, L)
+      : null;
 
-    const sug = suggestSq(Icheck);
-    setSuggestUI(sug, Icheck ?? NaN);
-
-    $("kpi").textContent = kpi;
-    $("kpiSub").textContent = sub;
-    $("detail").textContent = detail;
-
+    setResultUI({I, V, phase, L, sug, mode});
     refreshFilled();
   }
 
@@ -474,7 +516,7 @@ Ver: ${VERSION}`;
     t = setTimeout(calc, 120);
   }
 
-  ["mode","phase","voltage","kw","ampVD","dist","cable","cores","margin"].forEach(id=>{
+  ["mode","phase","voltage","kw","ampIn","dist","cable","cores"].forEach(id=>{
     $(id)?.addEventListener("input", auto);
     $(id)?.addEventListener("change", auto);
   });
