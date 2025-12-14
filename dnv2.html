@@ -8,7 +8,6 @@
   <style>
     :root{
       --bg:#0b0d12;
-      --card:#0f172a;
       --bd:rgba(255,255,255,.12);
       --txt:#e9eefc;
       --muted:rgba(233,238,252,.65);
@@ -16,7 +15,6 @@
       --r:18px;
       --r2:22px;
     }
-
     *{ box-sizing:border-box; }
     body{
       margin:0;
@@ -24,7 +22,6 @@
       background: var(--bg);
       color:var(--txt);
     }
-
     .wrap{ max-width:980px; margin:0 auto; padding:16px; }
 
     .top{
@@ -36,7 +33,6 @@
       border-radius:var(--r2);
       box-shadow:var(--shadow);
     }
-
     h1{ margin:0; font-size:18px; font-weight:900; }
     .spec{ font-size:12px; color:var(--muted); display:flex; gap:10px; flex-wrap:wrap; }
 
@@ -73,7 +69,6 @@
       margin-bottom:6px;
       font-weight:700;
     }
-
     select,input{
       width:100%;
       padding:11px 12px;
@@ -82,6 +77,7 @@
       background:rgba(0,0,0,.25);
       color:var(--txt);
       font-size:15px;
+      outline:none;
     }
 
     .row{
@@ -90,18 +86,10 @@
       flex-wrap:wrap;
     }
     .row>*{ flex:1 1 180px; }
-
     .hr{ height:1px; background:rgba(255,255,255,.15); margin:12px 0; }
 
-    .kpi{
-      font-size:38px;
-      font-weight:900;
-    }
-    .kpi-sub{
-      font-size:13px;
-      color:var(--muted);
-      margin-top:6px;
-    }
+    .kpi{ font-size:38px; font-weight:900; }
+    .kpi-sub{ font-size:13px; color:var(--muted); margin-top:6px; }
 
     .mono{
       margin-top:10px;
@@ -122,15 +110,8 @@
       padding:10px 12px;
       background:rgba(0,0,0,.25);
     }
-    summary{
-      cursor:pointer;
-      font-weight:900;
-      font-size:13px;
-    }
-    details p, details li{
-      font-size:13px;
-      color:var(--muted);
-    }
+    summary{ cursor:pointer; font-weight:900; font-size:13px; }
+    details p, details li{ font-size:13px; color:var(--muted); }
 
     footer{
       margin-top:10px;
@@ -201,15 +182,15 @@
         <div class="row">
           <div>
             <label>Current (A)</label>
-            <input id="ampVD" inputmode="decimal" />
+            <input id="ampVD" inputmode="decimal" placeholder="30" />
           </div>
           <div>
-            <label>Distance (m)</label>
-            <input id="dist" inputmode="decimal" />
+            <label>Distance (m)（片道）</label>
+            <input id="dist" inputmode="decimal" placeholder="50" />
           </div>
           <div>
             <label>Wire (sq)</label>
-            <input id="sq" inputmode="decimal" />
+            <input id="sq" inputmode="decimal" placeholder="2" />
           </div>
         </div>
       </div>
@@ -235,6 +216,7 @@ V: —
         </ul>
         <p>
           ラック敷設 / 30℃ / 力率0.85 / 効率0.90 / マージン10%<br>
+          電圧降下は簡易式（抵抗ベース / Cu想定）<br>
           条件が異なる場合は別途検討してください
         </p>
       </details>
@@ -249,71 +231,117 @@ V: —
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const PF = 0.85, EFF = 0.90, M = 0.10;
 
+  // Basic fixed spec
+  const PF = 0.85;
+  const EFF = 0.90;
+  const M = 0.10;
+
+  // V-drop limit (Basic固定)
+  const VDROP_LIMIT_PCT = 2.0;
+
+  // parse number (強め)
   const num = v => {
-    if (!v) return null;
-    return parseFloat(String(v).replace(/[０-９．]/g,c=>
-      String.fromCharCode(c.charCodeAt(0)-0xFEE0)));
+    if (v === null || v === undefined) return null;
+    const s0 = String(v).trim();
+    if (!s0) return null;
+
+    // 全角→半角（数字とドット）
+    const s1 = s0.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0))
+                .replace(/[．]/g, ".");
+
+    const x = parseFloat(s1);
+    return Number.isFinite(x) ? x : null;
   };
 
   function showPanels(){
-    $("kw-to-a").style.display = $("mode").value==="kw-to-a"?"block":"none";
-    $("a-to-kw").style.display = $("mode").value==="a-to-kw"?"block":"none";
-    $("vdrop").style.display  = $("mode").value==="vdrop" ?"block":"none";
+    const m = $("mode").value;
+    $("kw-to-a").style.display = (m==="kw-to-a") ? "block" : "none";
+    $("a-to-kw").style.display = (m==="a-to-kw") ? "block" : "none";
+    $("vdrop").style.display  = (m==="vdrop")  ? "block" : "none";
   }
 
   function calc(){
-    const mode=$("mode").value, phase=$("phase").value;
-    const V=num($("voltage").value);
-    const root = phase==="three"?Math.sqrt(3):1;
+    const mode = $("mode").value;
+    const phase = $("phase").value;
+    const V = num($("voltage").value);
+    const root = phase==="three" ? Math.sqrt(3) : 1;
 
-    let kpi="—", sub="入力すると自動計算", st="Ready";
-    let log=[];
+    let kpi = "—";
+    let sub = "入力すると自動計算";
+    let st  = "Ready";
 
-    if(mode==="kw-to-a" && V && num($("kw").value)){
-      const kW=num($("kw").value);
-      const I=kW*1000*(1+M)/(V*root*PF*EFF);
-      kpi=I.toFixed(2)+" A";
-      sub="kW → A";
-      st="OK";
+    // detail base
+    let detail = `Mode: ${mode}\nPhase: ${phase}\nV: ${V ?? "—"}`;
+
+    if (mode === "kw-to-a") {
+      const kW = num($("kw").value);
+      if (V && kW) {
+        const I = kW*1000*(1+M)/(V*root*PF*EFF);
+        kpi = I.toFixed(2) + " A";
+        sub = "kW → A（設計マージン込み）";
+        st = "OK";
+      }
     }
 
-    if(mode==="a-to-kw" && V && num($("amp").value)){
-      const I=num($("amp").value);
-      const kW=(I*V*root*PF*EFF/1000)/(1+M);
-      kpi=kW.toFixed(3)+" kW";
-      sub="A → kW";
-      st="OK";
+    if (mode === "a-to-kw") {
+      const I = num($("amp").value);
+      if (V && I) {
+        const kW = (I*V*root*PF*EFF/1000)/(1+M);
+        kpi = kW.toFixed(3) + " kW";
+        sub = "A → kW（設計マージン除外値）";
+        st = "OK";
+      }
     }
 
-    if(mode==="vdrop" && V && num($("ampVD").value) && num($("dist").value) && num($("sq").value)){
-      const I=num($("ampVD").value), L=num($("dist").value), A=num($("sq").value);
-      const rho=0.01724;
-      const R=rho*L/A;
-      const dV=phase==="three"?Math.sqrt(3)*I*R:2*I*R;
-      const pct=dV/V*100;
-      kpi=pct.toFixed(2)+" %";
-      sub="電圧降下";
-      st="OK";
+    if (mode === "vdrop") {
+      const I = num($("ampVD").value);
+      const L = num($("dist").value); // one-way
+      const A = num($("sq").value);
+
+      detail += `\nI: ${I ?? "—"}  L: ${L ?? "—"}  sq: ${A ?? "—"}`;
+
+      if (V && I && L && A) {
+        // Cu ρ[Ω·mm²/m]代表値
+        const rho = 0.01724;
+        const R = rho * L / A;
+
+        // single: ΔV = 2 I R, three: ΔV = √3 I R
+        const dV = (phase==="three") ? (Math.sqrt(3)*I*R) : (2*I*R);
+        const pct = dV / V * 100;
+        const Vload = V - dV;
+
+        // 大表示を「負荷側電圧」にする（意味が直感的）
+        kpi = Vload.toFixed(1) + " V";
+        sub = `ΔV ${dV.toFixed(1)}V（${pct.toFixed(2)}%）基準 ${VDROP_LIMIT_PCT.toFixed(1)}%`;
+
+        st = (pct <= VDROP_LIMIT_PCT) ? "OK" : "NG";
+      } else {
+        sub = "電圧/A/距離/sqを入力";
+      }
     }
 
-    $("status").textContent=st;
-    $("kpi").textContent=kpi;
-    $("kpiSub").textContent=sub;
-    $("detail").textContent=`Mode: ${mode}\nPhase: ${phase}\nV: ${V??"—"}`;
+    $("status").textContent = st;
+    $("kpi").textContent = kpi;
+    $("kpiSub").textContent = sub;
+    $("detail").textContent = detail;
   }
 
+  // debounce auto calc
   let t;
   function auto(){
     clearTimeout(t);
-    t=setTimeout(calc,120);
+    t = setTimeout(calc, 120);
   }
 
+  // events
   ["mode","phase","voltage","kw","amp","ampVD","dist","sq"].forEach(id=>{
-    $(id)?.addEventListener("input",auto);
+    $(id)?.addEventListener("input", auto);
   });
-  $("mode").addEventListener("change",()=>{showPanels();auto();});
+  $("mode").addEventListener("change", ()=>{
+    showPanels();
+    auto();
+  });
 
   showPanels();
 })();
