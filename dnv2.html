@@ -1,261 +1,499 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Null Electric Calc v2</title>
-
-<style>
-:root{
-  --bg:#f6f6f6;
-  --card:#fff;
-  --ink:#111;
-  --muted:#6b7280;
-  --line:#e5e7eb;
-  --radius:22px;
-  --shadow:0 10px 26px rgba(0,0,0,.12);
-}
-*{box-sizing:border-box}
-body{
-  margin:0;
-  padding:20px;
-  background:var(--bg);
-  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
-  color:var(--ink);
-}
-.wrap{max-width:720px;margin:auto}
-
-h1{margin:0;font-size:26px;font-weight:800}
-.sub{font-size:13px;color:var(--muted);margin-top:4px}
-
-.card{
-  background:var(--card);
-  border-radius:var(--radius);
-  padding:18px;
-  box-shadow:var(--shadow);
-  margin-top:14px;
-}
-
-.label{
-  font-size:13px;
-  font-weight:700;
-  margin-bottom:10px;
-}
-
-.row{display:flex;gap:10px;flex-wrap:wrap}
-
-.btn{
-  flex:1;
-  min-width:110px;
-  padding:12px;
-  border-radius:18px;
-  border:1px solid var(--line);
-  background:#fff;
-  font-weight:700;
-  text-align:center;
-  cursor:pointer;
-}
-.btn.active{background:#111;color:#fff;border-color:#111}
-
-.select,.input{
-  width:100%;
-  padding:13px 14px;
-  border-radius:16px;
-  border:1px solid #d1d5db;
-  font-size:16px;
-  font-weight:600;
-}
-
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.hide{display:none}
-
-.result{
-  margin-top:16px;
-  background:#111;
-  color:#fff;
-  border-radius:22px;
-  padding:26px 18px;
-  box-shadow:0 14px 32px rgba(0,0,0,.25);
-  position:relative;
-}
-.wm{
-  position:absolute;
-  left:50%;top:50%;
-  transform:translate(-50%,-50%);
-  font-size:42px;
-  font-weight:300;
-  color:rgba(255,255,255,.28);
-}
-.main{
-  position:relative;
-  text-align:center;
-  font-size:34px;
-  font-weight:900;
-}
-.subres{
-  text-align:center;
-  font-size:14px;
-  color:rgba(255,255,255,.85);
-  margin-top:6px;
-}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Null Electric Calc v2</title>
+  <style>
+    :root { --bd:#ddd; --fg:#111; --muted:#666; --bg:#fff; --card:#fafafa; }
+    body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP",Helvetica,Arial,sans-serif;
+      margin:0; color:var(--fg); background:var(--bg); }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 16px; }
+    .top { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    h1 { margin: 0; font-size: 22px; }
+    .sub { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+    .grid { display:grid; grid-template-columns: 1fr; gap: 12px; margin-top: 14px; }
+    @media (min-width: 860px){ .grid { grid-template-columns: 1.1fr 0.9fr; } }
+    .card { background: var(--card); border: 1px solid var(--bd); border-radius: 14px; padding: 14px; }
+    .row { display:flex; gap: 10px; flex-wrap:wrap; align-items:center; }
+    .row > * { flex: 1 1 160px; }
+    label { display:block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    select, input { width:100%; box-sizing:border-box; border: 1px solid var(--bd); border-radius: 10px;
+      padding: 10px 10px; font-size: 15px; background:#fff; }
+    .btns { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    button { border: 1px solid var(--bd); background:#fff; border-radius: 12px; padding: 10px 12px; font-size: 14px; cursor:pointer; }
+    button.primary { border-color:#bbb; font-weight:600; }
+    .pill { display:inline-flex; align-items:center; gap:8px; padding: 8px 10px; border:1px solid var(--bd); border-radius: 999px; background:#fff; }
+    .kpi { font-size: 32px; font-weight: 700; margin: 0; }
+    .kpi-sub { margin: 6px 0 0; color: var(--muted); }
+    .hr { height:1px; background:var(--bd); margin: 12px 0; }
+    .mono { font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; }
+    .ok { font-weight:700; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
+    footer { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--bd); color: var(--muted); font-size: 12px; }
+  </style>
 </head>
-
 <body>
-<div class="wrap">
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Null Electric Calc</h1>
+        <div class="sub">v2 / 30℃基準・設計マージン10%</div>
+      </div>
+      <div class="pill">
+        <span class="mono">Status</span>
+        <span id="status" class="ok">Ready</span>
+      </div>
+    </div>
 
-<h1>Null Electric Calc</h1>
-<div class="sub">v2 / 30℃基準・設計マージン10%</div>
+    <div class="grid">
+      <div class="card">
+        <div class="row">
+          <div>
+            <label>Mode</label>
+            <select id="mode">
+              <option value="kw-to-a">kW → A</option>
+              <option value="a-to-kw">A → kW</option>
+              <option value="a-to-wire">A → Wire（枠）</option>
+              <option value="vdrop">V-drop</option>
+            </select>
+          </div>
+          <div>
+            <label>Phase</label>
+            <select id="phase">
+              <option value="single">単相</option>
+              <option value="three">三相</option>
+            </select>
+          </div>
+          <div>
+            <label>Installation</label>
+            <select id="install">
+              <option value="rack">ラック</option>
+              <option value="pipe">配管</option>
+            </select>
+          </div>
+        </div>
 
-<!-- MODE -->
-<div class="card">
-  <div class="label">Mode</div>
-  <div class="row" id="mode">
-    <div class="btn active" data-m="kw">kW → A</div>
-    <div class="btn" data-m="a">A → kW</div>
-    <div class="btn" data-m="wire">A → Wire</div>
-    <div class="btn" data-m="vd">V-drop</div>
+        <div class="hr"></div>
+
+        <!-- 共通条件 -->
+        <div class="row">
+          <div>
+            <label>Voltage (V)</label>
+            <input id="voltage" inputmode="decimal" placeholder="例 100 / 200 / 400" />
+          </div>
+          <div>
+            <label>Power factor（力率）</label>
+            <input id="pf" inputmode="decimal" placeholder="例 0.85" />
+          </div>
+          <div>
+            <label>Efficiency（効率）</label>
+            <input id="eff" inputmode="decimal" placeholder="例 0.90" />
+          </div>
+        </div>
+
+        <!-- mode別UI -->
+        <div id="panel-kw-to-a" style="margin-top:12px;">
+          <div class="row">
+            <div>
+              <label>Power (kW)</label>
+              <input id="kw" inputmode="decimal" placeholder="例 5.5" />
+            </div>
+            <div>
+              <label>Design margin（%）</label>
+              <input id="margin" inputmode="decimal" placeholder="例 10" />
+            </div>
+          </div>
+        </div>
+
+        <div id="panel-a-to-kw" style="margin-top:12px; display:none;">
+          <div class="row">
+            <div>
+              <label>Current (A)</label>
+              <input id="amp" inputmode="decimal" placeholder="例 25" />
+            </div>
+            <div>
+              <label>Design margin（%）</label>
+              <input id="margin2" inputmode="decimal" placeholder="例 10" />
+            </div>
+          </div>
+        </div>
+
+        <div id="panel-a-to-wire" style="margin-top:12px; display:none;">
+          <div class="row">
+            <div>
+              <label>Current (A)</label>
+              <input id="ampWire" inputmode="decimal" placeholder="例 40" />
+            </div>
+            <div>
+              <label>Wire type</label>
+              <select id="wireType">
+                <option value="VVF">VVF</option>
+                <option value="EM_IV">EM IV</option>
+                <option value="IV">IV</option>
+                <option value="CV">CV</option>
+                <option value="CVT">CVT</option>
+              </select>
+            </div>
+            <div>
+              <label>Note</label>
+              <input id="wireNote" placeholder="表はあとで入れる" />
+            </div>
+          </div>
+          <div class="hint">A→Wire は「許容電流テーブル」を入れたら完成。今は動く枠だけ。</div>
+        </div>
+
+        <div id="panel-vdrop" style="margin-top:12px; display:none;">
+          <div class="row">
+            <div>
+              <label>Current (A)</label>
+              <input id="ampVD" inputmode="decimal" placeholder="例 30" />
+            </div>
+            <div>
+              <label>Distance (m)（片道）</label>
+              <input id="dist" inputmode="decimal" placeholder="例 30" />
+            </div>
+            <div>
+              <label>Wire (sq)</label>
+              <input id="sq" inputmode="decimal" placeholder="例 5.5 / 14 / 22" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <label>Material</label>
+              <select id="mat">
+                <option value="cu">Cu（銅）</option>
+                <option value="al">Al（アルミ）</option>
+              </select>
+            </div>
+            <div>
+              <label>V-drop limit（%）</label>
+              <input id="vlimit" inputmode="decimal" placeholder="例 2.0" />
+            </div>
+            <div>
+              <label>Shortcut</label>
+              <div class="btns">
+                <button type="button" data-dist="10">10m</button>
+                <button type="button" data-dist="20">20m</button>
+                <button type="button" data-dist="30">30m</button>
+                <button type="button" data-dist="50">50m</button>
+              </div>
+            </div>
+          </div>
+          <div class="hint">電圧降下は簡易式（抵抗ベース）。会社の基準式があるならそこに合わせて差し替え可。</div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="btns">
+          <button type="button" class="primary" id="calcBtn">Calculate</button>
+          <button type="button" id="copyBtn">Copy result</button>
+          <button type="button" id="resetBtn">Reset</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="kpi" id="kpi">0.0</p>
+        <div class="kpi-sub" id="kpiSub">—</div>
+
+        <div class="hr"></div>
+
+        <div class="mono" id="detail" style="white-space:pre-wrap; line-height:1.55;">
+Mode: —
+Phase: —
+Installation: —
+</div>
+
+        <footer id="null-copyright">
+          © 2025 Null / 516ockz
+        </footer>
+      </div>
+    </div>
   </div>
-</div>
-
-<!-- PHASE -->
-<div class="card">
-  <div class="label">Phase</div>
-  <div class="grid2">
-    <div class="btn active" id="ph1">単相</div>
-    <div class="btn" id="ph3">三相</div>
-  </div>
-</div>
-
-<!-- INSTALL -->
-<div class="card">
-  <div class="label">Installation</div>
-  <div class="grid2" id="inst">
-    <div class="btn active" data-i="rack">ラック</div>
-    <div class="btn" data-i="pipe">配管</div>
-  </div>
-</div>
-
-<!-- WIRE -->
-<div class="card" id="wireCard">
-  <div class="label">Wire</div>
-  <select class="select" id="wire">
-    <option value="VVF">VVF</option>
-    <option value="EM">EM</option>
-    <option value="IV">IV</option>
-    <option value="CV">CV</option>
-    <option value="CVT">CVT</option>
-  </select>
-</div>
-
-<!-- INPUT -->
-<div class="card">
-  <input class="input" id="v1" placeholder="Load / Current">
-  <input class="input hide" id="v2" placeholder="Length (m)" style="margin-top:10px">
-  <input class="input" id="pf" value="1.00" step="0.01" style="margin-top:10px">
-</div>
-
-<!-- RESULT -->
-<div class="result">
-  <div class="wm">Null</div>
-  <div class="main" id="out">0.0</div>
-  <div class="subres" id="outsub">Ready</div>
-</div>
-
-</div>
 
 <script>
-/* ===== 設計基準 ===== */
-const DESIGN_MARGIN = 0.90;
-const INST = { rack:1.0, pipe:0.85 };
+(() => {
+  "use strict";
 
-const WIRE = {
- VVF:{ max:30, sizes:[
-  {s:"1.6mm",c:18,r:0.0136},
-  {s:"2.0mm",c:23,r:0.00868},
-  {s:"2.6mm",c:30,r:0.00519}
- ]},
- EM:{ max:30, sizes:[
-  {s:"1.6mm",c:18,r:0.0136},
-  {s:"2.0mm",c:23,r:0.00868},
-  {s:"2.6mm",c:30,r:0.00519}
- ]},
- IV:{ sizes:[
-  {s:"2sq",c:24,r:0.00907},
-  {s:"3.5sq",c:32,r:0.00514},
-  {s:"5.5sq",c:42,r:0.00329},
-  {s:"8sq",c:55,r:0.00243},
-  {s:"14sq",c:85,r:0.00139}
- ]},
- CV:{ sizes:[
-  {s:"3.5sq",c:30,r:0.00514},
-  {s:"5.5sq",c:42,r:0.00329},
-  {s:"8sq",c:55,r:0.00243},
-  {s:"14sq",c:85,r:0.00139}
- ]},
- CVT:{ sizes:[
-  {s:"14sq",c:85,r:0.00139},
-  {s:"22sq",c:105,r:0.000892},
-  {s:"38sq",c:140,r:0.000525}
- ]}
-};
+  // ---- small helpers ----
+  const $ = (id) => document.getElementById(id);
+  const setStatus = (t) => { $("status").textContent = t; };
+  const num = (v, d=0) => {
+    const x = Number(String(v ?? "").replace(/,/g,"").trim());
+    return Number.isFinite(x) ? x : d;
+  };
 
-/* ===== 状態 ===== */
-let mode="kw", phase=1, inst="rack", volt=100;
-
-/* ===== 計算 ===== */
-function calc(){
- const v=+document.getElementById("v1").value||0;
- const l=+document.getElementById("v2").value||0;
- const pf=+document.getElementById("pf").value||1;
- const wire=document.getElementById("wire").value;
- const eff=INST[inst]*DESIGN_MARGIN;
- const o=document.getElementById("out");
- const s=document.getElementById("outsub");
-
- if(mode==="kw"){
-  if(!v)return;
-  const A=phase===1?(v*1000)/(volt*pf):(v*1000)/(Math.sqrt(3)*volt*pf);
-  o.textContent=A.toFixed(1)+" A";
-  s.textContent=`${volt}V / PF${pf}`;
- }
-
- if(mode==="a"){
-  if(!v)return;
-  const kW=phase===1?(volt*v*pf)/1000:(Math.sqrt(3)*volt*v*pf)/1000;
-  o.textContent=kW.toFixed(2)+" kW";
-  s.textContent=`${volt}V / PF${pf}`;
- }
-
- if(mode==="wire"){
-  if(!v)return;
-  const list=WIRE[wire];
-  const max=(list.max||list.sizes.at(-1).c)*eff;
-  if(v>max){
-    o.textContent="N/A";
-    s.textContent=`Max ${max.toFixed(0)}A`;
-    return;
+  // ---- basic guard (optional) ----
+  function licenseOK() {
+    const el = $("null-copyright");
+    if (!el) return false;
+    const txt = (el.textContent || "").toLowerCase();
+    if (!txt.includes("null") || !txt.includes("516")) return false;
+    const st = getComputedStyle(el);
+    if (st.display === "none" || st.visibility === "hidden") return false;
+    return true;
   }
-  const f=list.sizes.find(x=>x.c*eff>=v);
-  o.textContent=f.s;
-  s.textContent=`Allow ${(f.c*eff).toFixed(0)}A`;
- }
 
- if(mode==="vd"){
-  if(!v||!l)return;
-  const list=WIRE[wire].sizes;
-  const r=list[0];
-  const drop=phase===1?(2*r.r*v*l):(Math.sqrt(3)*r.r*v*l);
-  o.textContent=drop.toFixed(2)+" V";
-  s.textContent=`${volt}V / ${v}A / ${l}m`;
- }
-}
+  // ---- state save/load ----
+  const KEY = "null_calc_v2_state";
+  function saveState() {
+    const state = {
+      mode: $("mode").value,
+      phase: $("phase").value,
+      install: $("install").value,
+      voltage: $("voltage").value,
+      pf: $("pf").value,
+      eff: $("eff").value,
+      kw: $("kw").value,
+      margin: $("margin").value,
+      amp: $("amp").value,
+      margin2: $("margin2").value,
+      ampWire: $("ampWire").value,
+      wireType: $("wireType").value,
+      wireNote: $("wireNote").value,
+      ampVD: $("ampVD").value,
+      dist: $("dist").value,
+      sq: $("sq").value,
+      mat: $("mat").value,
+      vlimit: $("vlimit").value
+    };
+    localStorage.setItem(KEY, JSON.stringify(state));
+  }
 
-document.querySelectorAll("input,select").forEach(e=>{
- e.addEventListener("input",calc);
-});
+  function loadState() {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return;
+    try {
+      const s = JSON.parse(raw);
+      for (const [k,v] of Object.entries(s)) {
+        if ($(k)) $(k).value = v;
+      }
+    } catch {}
+  }
 
-/* ボタン類の処理は省略（今までと同じ） */
+  // ---- UI switching ----
+  function updateModeUI() {
+    const m = $("mode").value;
+    $("panel-kw-to-a").style.display = (m === "kw-to-a") ? "block" : "none";
+    $("panel-a-to-kw").style.display = (m === "a-to-kw") ? "block" : "none";
+    $("panel-a-to-wire").style.display = (m === "a-to-wire") ? "block" : "none";
+    $("panel-vdrop").style.display = (m === "vdrop") ? "block" : "none";
+  }
+
+  // ---- core calc ----
+  function calc() {
+    if (!licenseOK()) {
+      setStatus("License error");
+      $("kpi").textContent = "—";
+      $("kpiSub").textContent = "copyright missing";
+      $("detail").textContent = "Disabled";
+      return;
+    }
+
+    const mode = $("mode").value;
+    const phase = $("phase").value;
+    const install = $("install").value;
+
+    const V = num($("voltage").value, 0);
+    const pf = num($("pf").value, 0.85);
+    const eff = num($("eff").value, 0.90);
+
+    let kpi = "0.0";
+    let sub = "—";
+    let lines = [];
+
+    lines.push(`Mode: ${mode}`);
+    lines.push(`Phase: ${phase}`);
+    lines.push(`Installation: ${install}`);
+    lines.push(`V=${V}  pf=${pf}  eff=${eff}`);
+
+    const root = (phase === "three") ? Math.sqrt(3) : 1;
+
+    if (mode === "kw-to-a") {
+      const kW = num($("kw").value, 0);
+      const margin = num($("margin").value, 10) / 100;
+      const P = kW * 1000 * (1 + margin);
+
+      if (V <= 0 || pf <= 0 || eff <= 0) {
+        setStatus("Input error");
+        $("kpi").textContent = "—";
+        $("kpiSub").textContent = "電圧/力率/効率を確認";
+        $("detail").textContent = lines.join("\n");
+        return;
+      }
+
+      const I = P / (V * root * pf * eff);
+      kpi = I.toFixed(2);
+      sub = `Current (A)  ※margin ${(margin*100).toFixed(0)}%`;
+
+      lines.push(`kW=${kW}`);
+      lines.push(`P(with margin)=${(P/1000).toFixed(3)} kW`);
+      lines.push(`I=${I.toFixed(4)} A`);
+
+      setStatus("OK");
+    }
+
+    if (mode === "a-to-kw") {
+      const I = num($("amp").value, 0);
+      const margin = num($("margin2").value, 10) / 100;
+
+      if (V <= 0 || pf <= 0 || eff <= 0) {
+        setStatus("Input error");
+        $("kpi").textContent = "—";
+        $("kpiSub").textContent = "電圧/力率/効率を確認";
+        $("detail").textContent = lines.join("\n");
+        return;
+      }
+
+      const P = I * V * root * pf * eff;
+      const kW = (P / 1000) / (1 + margin);
+
+      kpi = kW.toFixed(3);
+      sub = `Power (kW)  ※margin ${(margin*100).toFixed(0)}%`;
+
+      lines.push(`I=${I}`);
+      lines.push(`P=${(P/1000).toFixed(4)} kW`);
+      lines.push(`kW(without margin)=${kW.toFixed(6)} kW`);
+
+      setStatus("OK");
+    }
+
+    if (mode === "a-to-wire") {
+      const I = num($("ampWire").value, 0);
+      const type = $("wireType").value;
+
+      // NOTE: テーブル値はここを「こーすけの採用表」に置き換える想定
+      const sampleTable = {
+        VVF:  { "1.6": 18, "2.0": 23, "2.6": 27, "5.5": 49 },
+        IV:   { "1.25": 19, "2.0": 27, "3.5": 37, "5.5": 49, "8": 61, "14": 85, "22": 110 },
+        EM_IV:{ "1.25": 19, "2.0": 27, "3.5": 37, "5.5": 49, "8": 61, "14": 85, "22": 110 },
+        CV:   { "2": 27, "3.5": 38, "5.5": 49, "8": 61, "14": 85, "22": 110, "38": 145, "60": 185 },
+        CVT:  { "8": 61, "14": 85, "22": 110, "38": 145, "60": 185, "100": 250 }
+      };
+
+      const table = sampleTable[type] || {};
+      const sizes = Object.keys(table).map(Number).sort((a,b)=>a-b);
+
+      let pick = null;
+      for (const s of sizes) {
+        if (table[String(s)] >= I) { pick = s; break; }
+      }
+
+      if (!pick) {
+        kpi = "—";
+        sub = `Wire: not found`;
+        lines.push(`I=${I}A`);
+        lines.push(`type=${type}`);
+        lines.push(`result=not found (table too small)`);
+        setStatus("Check table");
+      } else {
+        kpi = `${pick}`;
+        sub = `Recommended sq  （暫定テーブル）`;
+        lines.push(`I=${I}A`);
+        lines.push(`type=${type}`);
+        lines.push(`pick=${pick}sq (allow=${table[String(pick)]}A)`);
+        setStatus("OK");
+      }
+    }
+
+    if (mode === "vdrop") {
+      const I = num($("ampVD").value, 0);
+      const dist = num($("dist").value, 0); // one-way
+      const sq = num($("sq").value, 0);
+      const mat = $("mat").value;
+      const limit = num($("vlimit").value, 2.0);
+
+      if (V <= 0 || dist <= 0 || sq <= 0) {
+        setStatus("Input error");
+        $("kpi").textContent = "—";
+        $("kpiSub").textContent = "電圧/距離/sq を確認";
+        $("detail").textContent = lines.join("\n");
+        return;
+      }
+
+      // 簡易抵抗式（20℃基準の代表値に寄せてる）
+      // ρ[Ω·mm²/m]  Cu=0.01724 / Al=0.02826
+      const rho = (mat === "al") ? 0.02826 : 0.01724;
+
+      // 単相: ΔV = 2 * I * (ρ * L / A)
+      // 三相: ΔV = √3 * I * (ρ * L / A)
+      const R = rho * dist / sq;
+      const dV = (phase === "three") ? (Math.sqrt(3) * I * R) : (2 * I * R);
+      const pct = (dV / V) * 100;
+
+      kpi = `${pct.toFixed(2)}%`;
+      sub = `V-drop  (${dV.toFixed(2)}V)`;
+
+      lines.push(`I=${I}A  L(one-way)=${dist}m  A=${sq}sq  mat=${mat}`);
+      lines.push(`ΔV=${dV.toFixed(4)}V  (${pct.toFixed(4)}%)`);
+      lines.push(`limit=${limit}%  => ${pct <= limit ? "OK" : "NG"}`);
+
+      setStatus(pct <= limit ? "OK" : "NG");
+    }
+
+    $("kpi").textContent = kpi;
+    $("kpiSub").textContent = sub;
+    $("detail").textContent = lines.join("\n");
+    saveState();
+  }
+
+  function copyResult() {
+    const text = [
+      "Null Electric Calc v2",
+      $("detail").textContent,
+      `Result: ${$("kpi").textContent} / ${$("kpiSub").textContent}`,
+      "© 2025 Null / 516ockz"
+    ].join("\n");
+
+    navigator.clipboard?.writeText(text).then(() => {
+      setStatus("Copied");
+      setTimeout(()=>setStatus("Ready"), 900);
+    }).catch(() => {
+      setStatus("Copy failed");
+      setTimeout(()=>setStatus("Ready"), 900);
+    });
+  }
+
+  function resetAll() {
+    localStorage.removeItem(KEY);
+    location.reload();
+  }
+
+  // ---- init ----
+  document.addEventListener("DOMContentLoaded", () => {
+    loadState();
+    // defaults if empty
+    if (!$("voltage").value) $("voltage").value = "200";
+    if (!$("pf").value) $("pf").value = "0.85";
+    if (!$("eff").value) $("eff").value = "0.90";
+    if (!$("margin").value) $("margin").value = "10";
+    if (!$("margin2").value) $("margin2").value = "10";
+    if (!$("vlimit").value) $("vlimit").value = "2.0";
+
+    updateModeUI();
+
+    $("mode").addEventListener("change", () => { updateModeUI(); saveState(); });
+    ["phase","install","voltage","pf","eff","kw","margin","amp","margin2","ampWire","wireType","wireNote","ampVD","dist","sq","mat","vlimit"]
+      .forEach(id => $(id)?.addEventListener("input", saveState));
+
+    // distance shortcut
+    document.querySelectorAll("[data-dist]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        $("dist").value = btn.getAttribute("data-dist");
+        saveState();
+        calc();
+      });
+    });
+
+    $("calcBtn").addEventListener("click", calc);
+    $("copyBtn").addEventListener("click", copyResult);
+    $("resetBtn").addEventListener("click", resetAll);
+
+    // 初回表示
+    calc();
+  });
+
+})();
 </script>
 </body>
 </html>
