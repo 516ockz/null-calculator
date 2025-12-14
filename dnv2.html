@@ -663,3 +663,61 @@ V=—
     $("kpi").textContent = kpi;
     $("kpiSub").textContent = sub;
     $("detail").textContent = lines.join("\n");
+    saveState();
+  }
+
+  function copyResult(){
+    const text = [
+      "Null Electric Calc (Basic)",
+      $("detail").textContent,
+      `Result: ${$("kpi").textContent} / ${$("kpiSub").textContent}`,
+      location.href,
+      "© 2025 Null / 516ockz"
+    ].join("\n");
+
+    navigator.clipboard?.writeText(text).then(() => {
+      setStatus("Copied");
+      setTimeout(()=>setStatus("Ready"), 900);
+    }).catch(() => {
+      setStatus("Copy failed");
+      setTimeout(()=>setStatus("Ready"), 900);
+    });
+  }
+
+  function resetAll(){
+    localStorage.removeItem(KEY);
+    location.reload();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    loadState();
+
+    // defaults（最低限）
+    if (!$("voltage").value) $("voltage").value = "200";
+    if (!$("vlimit").value) $("vlimit").value = "2.0";
+
+    updateModeUI();
+
+    $("mode").addEventListener("change", () => { updateModeUI(); saveState(); });
+    ["phase","voltage","kw","amp","ampVD","dist","sq","vlimit"].forEach(id => {
+      $(id)?.addEventListener("input", () => { saveState(); });
+    });
+
+    document.querySelectorAll("[data-dist]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        $("dist").value = btn.getAttribute("data-dist");
+        saveState();
+      });
+    });
+
+    $("calcBtn").addEventListener("click", calc);
+    $("copyBtn").addEventListener("click", copyResult);
+    $("resetBtn").addEventListener("click", resetAll);
+
+    // 起動時に計算しない（ここが大事）
+    setStatus("Ready");
+  });
+})();
+</script>
+</body>
+</html>
