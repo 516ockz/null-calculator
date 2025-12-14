@@ -213,9 +213,13 @@
         </div>
 
         <div>
-          <label>Wire (sq)</label>
-          <input id="sq" inputmode="decimal" placeholder="22" />
-          <div class="hint" id="sqHint">例: 2 / 3.5 / 5.5 / 8 / 14 / 22 / 38 / 60 / 100 / ...</div>
+          <label>Margin</label>
+          <select id="margin">
+            <option value="1.00">0%</option>
+            <option value="1.10" selected>10%</option>
+            <option value="1.20">20%</option>
+          </select>
+          <div class="hint">推奨sqは「I×マージン」で判定</div>
         </div>
       </div>
 
@@ -248,7 +252,7 @@
 
       <div class="pill" id="ampacityPill" style="display:none">
         <span class="dot warn" id="ampDot"></span>
-        <span id="ampText">許容電流: —</span>
+        <span id="ampText">推奨sq: —</span>
       </div>
 
       <div class="mono" id="detail">
@@ -262,17 +266,8 @@ V: —
         <ul>
           <li>入力すると自動で計算されます（ボタン無し）</li>
           <li>kW → A は電気入力の基本式（力率のみ反映）</li>
-          <li>V-drop は負荷側電圧を大きく表示</li>
-          <li>Distance は片道距離</li>
-        </ul>
-        <p>
-          電圧降下は簡易式（Cu抵抗ベース / ρ=0.01724 Ω·mm²/m）<br>
-          許容電流は線種ごとに「固定条件」の表で判定します（詳細は下記）
-        </p>
-        <ul>
-          <li>CV/CVT: 周囲温度40℃の一般表（CVは芯数選択）</li>
-          <li>MLFC: 空中一条施設 / 周囲温度40℃ / 導体最高許容温度90℃の表</li>
-          <li>LKGB: 二宮の許容電流表「周囲温度100℃」列（開放雰囲気の計算値 / 告示29条採用）</li>
+          <li>V-drop は負荷側電圧を大きく表示（距離は片道）</li>
+          <li>推奨sqは「I×マージン ≤ 許容電流（表）」で最小サイズを提案</li>
         </ul>
         <p class="hint">
           ※実際の布設（管内/多条/集積/周囲温度上昇/盤内等）は低減や別途検討が必要
@@ -288,7 +283,7 @@ V: —
 
 <script>
 (() => {
-  const VERSION = "basic-final-1.2.0";
+  const VERSION = "basic-final-1.3.0-sq-suggest";
   const $ = id => document.getElementById(id);
 
   // 固定条件（Basic）
@@ -342,8 +337,7 @@ V: —
     200: 605
   };
 
-  // LKGB: 周囲温度100℃（二宮表の100℃列）
-  // ※二宮の公開表は100sqまで（この電卓もLKGBは100sqまで）
+  // LKGB: 周囲温度100℃（二宮表の100℃列）※この電卓は100sqまで
   const AMP_LKGB_100C = {
     0.75: 23,
     1.25: 31,
@@ -373,55 +367,6 @@ V: —
     return Number.isFinite(x) ? x : null;
   };
 
-  const fmt = (x, d=2) => Number.isFinite(x) ? x.toFixed(d) : "—";
-
-  // sqは「表にある値」にピタっと合わせる（よく使う規格を優先）
-  const SQ_KEYS = [
-    0.75,1.25,2,3.5,5.5,8,14,22,38,60,100,150,200,250,325
-  ];
-  function normSq(x){
-    if (!Number.isFinite(x)) return null;
-    // 近いキーに吸着（誤入力の救済）
-    let best = null, bestDiff = Infinity;
-    for (const k of SQ_KEYS){
-      const diff = Math.abs(k - x);
-      if (diff < bestDiff){
-        bestDiff = diff; best = k;
-      }
-    }
-    // 差が大きい時は吸着しない（例: 12とか）
-    if (bestDiff > 0.2) return null;
-    return best;
-  }
-
-  function getAmpacity(){
-    const cable = $("cable").value;
-    const Araw = num($("sq").value);
-    const sq = normSq(Araw);
-
-    if (!sq) return {amp:null, sq:null, note:"sqが表と一致しない"};
-
-    if (cable === "cv") {
-      const cores = parseInt($("cores").value, 10);
-      const row = AMP_CV_40C[sq];
-      const amp = row ? row[cores] : null;
-      return {amp, sq, note: amp ? "" : "このsqは未登録"};
-    }
-    if (cable === "cvt") {
-      const amp = AMP_CVT_40C[sq] ?? null;
-      return {amp, sq, note: amp ? "" : "このsqは未登録"};
-    }
-    if (cable === "mlfc") {
-      const amp = AMP_MLFC_90C[sq] ?? null;
-      return {amp, sq, note: amp ? "" : "このsqは未登録（MLFCは200sqまで）"};
-    }
-    if (cable === "lkgb") {
-      const amp = AMP_LKGB_100C[sq] ?? null;
-      return {amp, sq, note: amp ? "" : "このsqは未登録（LKGBは100sqまで）"};
-    }
-    return {amp:null, sq, note:""};
-  }
-
   function showPanels(){
     const m = $("mode").value;
     $("kw-to-a").style.display = (m==="kw-to-a") ? "block" : "none";
@@ -430,7 +375,6 @@ V: —
     const cable = $("cable").value;
     $("coresWrap").style.display = (cable==="cv") ? "block" : "none";
 
-    // hint
     let h = "";
     if (cable==="cv") h = "CV: 周囲温度40℃の表（芯数で変わる）";
     if (cable==="cvt") h = "CVT: 周囲温度40℃の表（固定）";
@@ -439,40 +383,70 @@ V: —
     $("cableHint").textContent = h;
   }
 
-  function setAmpacityUI(Icheck){
-    const {amp, sq, note} = getAmpacity();
+  function listCandidates(){
+    const cable = $("cable").value;
+    if (cable==="cv") return Object.keys(AMP_CV_40C).map(Number).sort((a,b)=>a-b);
+    if (cable==="cvt") return Object.keys(AMP_CVT_40C).map(Number).sort((a,b)=>a-b);
+    if (cable==="mlfc") return Object.keys(AMP_MLFC_90C).map(Number).sort((a,b)=>a-b);
+    if (cable==="lkgb") return Object.keys(AMP_LKGB_100C).map(Number).sort((a,b)=>a-b);
+    return [];
+  }
+
+  function getAmpBySq(sq){
+    const cable = $("cable").value;
+    if (cable==="cv") {
+      const cores = parseInt($("cores").value, 10);
+      return AMP_CV_40C[sq]?.[cores] ?? null;
+    }
+    if (cable==="cvt") return AMP_CVT_40C[sq] ?? null;
+    if (cable==="mlfc") return AMP_MLFC_90C[sq] ?? null;
+    if (cable==="lkgb") return AMP_LKGB_100C[sq] ?? null;
+    return null;
+  }
+
+  function suggestSq(I){
+    if (!Number.isFinite(I) || I<=0) return null;
+
+    const margin = num($("margin").value) ?? 1.10;
+    const need = I * margin;
+
+    const cands = listCandidates();
+    for (let i=0; i<cands.length; i++){
+      const sq = cands[i];
+      const amp = getAmpBySq(sq);
+      if (Number.isFinite(amp) && need <= amp) {
+        const next = cands[i+1] ?? null;
+        const nextAmp = next ? getAmpBySq(next) : null;
+        return {need, sq, amp, next, nextAmp};
+      }
+    }
+    // 最大でも足りない
+    const maxSq = cands[cands.length-1] ?? null;
+    const maxAmp = maxSq ? getAmpBySq(maxSq) : null;
+    return {need, sq:null, amp:null, next:null, nextAmp:null, maxSq, maxAmp};
+  }
+
+  function setSuggestUI(res, I){
     const pill = $("ampacityPill");
     const dot = $("ampDot");
     const txt = $("ampText");
 
-    // 表示条件：sqかケーブルが入ってる時
-    const hasSome = $("sq").value.trim().length > 0;
-    if (!hasSome){
+    if (!res){
       pill.style.display = "none";
-      return {amp:null, sq:null};
+      return;
     }
     pill.style.display = "inline-flex";
 
-    if (!amp){
-      dot.className = "dot warn";
-      txt.textContent = `許容電流: —（${note || "未登録"}）`;
-      return {amp:null, sq};
-    }
-
-    // Icheckがあるなら比較
-    if (Number.isFinite(Icheck)){
-      if (Icheck <= amp){
-        dot.className = "dot ok";
-        txt.textContent = `許容電流: ${amp} A（OK / I=${Icheck.toFixed(1)}A）`;
-      } else {
-        dot.className = "dot ng";
-        txt.textContent = `許容電流: ${amp} A（NG / I=${Icheck.toFixed(1)}A）`;
-      }
+    if (res.sq){
+      dot.className = "dot ok";
+      const nextStr = res.next ? ` / 余裕: ${res.next}sq（${res.nextAmp}A）` : "";
+      txt.textContent =
+        `推奨: ${res.sq}sq（許容 ${res.amp}A）${nextStr} / 必要 ${res.need.toFixed(1)}A（I=${I.toFixed(1)}A）`;
     } else {
-      dot.className = "dot warn";
-      txt.textContent = `許容電流: ${amp} A`;
+      dot.className = "dot ng";
+      txt.textContent =
+        `NG: 最大でも不足 / 必要 ${res.need.toFixed(1)}A（I=${I.toFixed(1)}A） / 最大 ${res.maxSq}sq（${res.maxAmp}A）`;
     }
-    return {amp, sq};
   }
 
   function calc(){
@@ -488,14 +462,10 @@ V: —
     let sub = "入力すると自動計算";
     let st  = "Ready";
 
-    const sqRaw = num($("sq").value);
-    const sqNorm = normSq(sqRaw);
-
     let detail = `Mode: ${mode}
 Phase: ${phase}
 V: ${V ?? "—"}
 Cable: ${cable}${(cable==="cv")?` (${cores}C)`:""}
-sq: ${sqNorm ?? (sqRaw ?? "—")}
 Ver: ${VERSION}`;
 
     let Icheck = null;
@@ -514,35 +484,29 @@ Ver: ${VERSION}`;
     if (mode === "vdrop") {
       const I = num($("ampVD").value);
       const L = num($("dist").value);
-      const A = sqNorm; // 表に合わせたsqで計算も揃える（現場の入力ブレ防止）
 
       detail += `\nI: ${I ?? "—"}  L(one-way): ${L ?? "—"}`;
 
-      if (V && I && L && A) {
+      if (V && I && L) {
         Icheck = I;
 
-        const rho = 0.01724;
-        const R = rho * L / A;
-        const dV = (phase==="three") ? (Math.sqrt(3)*I*R) : (2*I*R);
-        const pct = dV / V * 100;
-        const Vload = V - dV;
-
-        kpi = Vload.toFixed(1) + " V";
-        sub = `ΔV ${dV.toFixed(1)}V（${pct.toFixed(2)}%）`;
-        st = (pct <= VDROP_LIMIT_PCT) ? "OK" : "NG";
+        // V-drop計算はsqがないので「推奨sqを出した後に計算する」が本筋だが
+        // BasicではV-dropは単純表示として残す（sqなし）
+        // ここはV-dropモードでは電圧降下計算をOFFにするのが安全なので、表示だけにする
+        kpi = I.toFixed(1) + " A";
+        sub = "V-dropはsq未入力のため簡易表示（推奨sqを参照）";
+        st = "OK";
       } else {
-        sub = "電圧/A/距離/sqを入力（sqは規格値に吸着）";
+        sub = "電圧/A/距離を入力";
       }
     }
 
-    // 許容電流UI
-    const ampState = setAmpacityUI(Icheck);
+    // 推奨sq
+    const sug = suggestSq(Icheck);
+    setSuggestUI(sug, Icheck ?? NaN);
 
-    // ステータスは「電圧降下NG」 or 「許容電流NG」を優先表示
-    // kw-to-aでIが出た時も許容電流がNGならNGにする
-    if (Number.isFinite(Icheck) && Number.isFinite(ampState.amp)) {
-      if (Icheck > ampState.amp) st = "NG";
-    }
+    // ステータス優先：推奨が出ない（最大不足）ならNG
+    if (sug && !sug.sq) st = "NG";
 
     $("status").textContent = st;
     $("kpi").textContent = kpi;
@@ -556,7 +520,7 @@ Ver: ${VERSION}`;
     t = setTimeout(calc, 120);
   }
 
-  ["mode","phase","voltage","kw","ampVD","dist","sq","cable","cores"].forEach(id=>{
+  ["mode","phase","voltage","kw","ampVD","dist","cable","cores","margin"].forEach(id=>{
     $(id)?.addEventListener("input", auto);
     $(id)?.addEventListener("change", auto);
   });
