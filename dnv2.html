@@ -25,7 +25,6 @@
 
     .top{
       display:flex; justify-content:space-between; align-items:flex-end;
-      gap:12px; flex-wrap:wrap;
       padding:14px 16px;
       background:rgba(255,255,255,.04);
       border:1px solid var(--bd);
@@ -33,7 +32,6 @@
       box-shadow:var(--shadow);
     }
     h1{ margin:0; font-size:18px; font-weight:900; }
-    .spec{ font-size:12px; color:var(--muted); display:flex; gap:10px; flex-wrap:wrap; }
 
     .status{
       padding:8px 12px;
@@ -126,16 +124,7 @@
 <div class="wrap">
 
   <div class="top">
-    <div>
-      <h1>Null Electric Calc</h1>
-      <div class="spec" id="specLine">
-        <span>Basic</span>
-        <span>ラック</span>
-        <span>30℃</span>
-        <span>pf 0.85</span>
-        <span>+10%</span>
-      </div>
-    </div>
+    <h1>Null Electric Calc</h1>
     <div class="status" id="status">Ready</div>
   </div>
 
@@ -203,13 +192,12 @@ V: —
         <summary>使い方・計算条件</summary>
         <ul>
           <li>入力すると自動で計算されます（ボタン無し）</li>
-          <li>kW→Aは「電気入力（pf反映）」の目安</li>
-          <li>V-dropは「負荷側電圧」を大表示</li>
-          <li>Distanceは片道距離</li>
+          <li>kW → A は電気入力の基本式（力率のみ反映）</li>
+          <li>V-drop は負荷側電圧を大きく表示</li>
+          <li>Distance は片道距離</li>
         </ul>
         <p>
-          固定条件：ラック / 30℃ / 力率0.85 / 設計マージン10%<br>
-          電圧降下：簡易式（Cu抵抗ベース, ρ=0.01724 Ω·mm²/m）<br>
+          電圧降下は簡易式（Cu抵抗ベース / ρ=0.01724 Ω·mm²/m）<br>
           ※条件が異なる場合は別途検討
         </p>
       </details>
@@ -223,34 +211,23 @@ V: —
 
 <script>
 (() => {
-  // Cache-bust hint: update this when you ship changes
-  const VERSION = "basic-1.0.0";
-
+  const VERSION = "basic-final-1.0.0";
   const $ = id => document.getElementById(id);
 
-  // Basic fixed spec
+  // 固定条件（Basic）
   const PF = 0.85;
-  const M  = 0.10;
-
-  // V-drop limit (Basic固定)
   const VDROP_LIMIT_PCT = 2.0;
 
-  // Strong-ish numeric parser (iPhoneの変な記号混入にも耐える)
   const num = (v) => {
     if (v === null || v === undefined) return null;
     let s = String(v).trim();
     if (!s) return null;
-
-    // 全角→半角（数字/記号）
     s = s
       .replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
       .replace(/[．]/g, ".")
       .replace(/[，]/g, ",")
       .replace(/[－]/g, "-");
-
-    // カンマ除去
     s = s.replace(/,/g, "");
-
     const x = parseFloat(s);
     return Number.isFinite(x) ? x : null;
   };
@@ -276,33 +253,29 @@ V: —
     if (mode === "kw-to-a") {
       const kW = num($("kw").value);
       if (V && kW) {
-        // 電気入力：I = P / (V * k * pf)  （effはBasicでは使わない）
-        const I = (kW*1000*(1+M)) / (V*root*PF);
+        const I = (kW*1000) / (V*root*PF);
         kpi = I.toFixed(2) + " A";
-        sub = "kW → A（pf反映 / 設計マージン込み）";
+        sub = "kW → A";
         st = "OK";
       }
     }
 
     if (mode === "vdrop") {
       const I = num($("ampVD").value);
-      const L = num($("dist").value); // one-way
+      const L = num($("dist").value);
       const A = num($("sq").value);
 
       detail += `\nI: ${I ?? "—"}  L(one-way): ${L ?? "—"}  sq: ${A ?? "—"}`;
 
       if (V && I && L && A) {
-        const rho = 0.01724;      // Cu代表値
-        const R = rho * L / A;    // 片道1導体
-
-        // single: ΔV = 2 I R, three: ΔV = √3 I R
+        const rho = 0.01724;
+        const R = rho * L / A;
         const dV = (phase==="three") ? (Math.sqrt(3)*I*R) : (2*I*R);
         const pct = dV / V * 100;
         const Vload = V - dV;
 
-        // 大表示：負荷側電圧（直感）
         kpi = Vload.toFixed(1) + " V";
-        sub = `ΔV ${dV.toFixed(1)}V（${pct.toFixed(2)}%）基準 ${VDROP_LIMIT_PCT.toFixed(1)}%`;
+        sub = `ΔV ${dV.toFixed(1)}V（${pct.toFixed(2)}%）`;
         st = (pct <= VDROP_LIMIT_PCT) ? "OK" : "NG";
       } else {
         sub = "電圧/A/距離/sqを入力";
@@ -315,14 +288,12 @@ V: —
     $("detail").textContent = detail;
   }
 
-  // debounce auto calc
   let t;
   function auto(){
     clearTimeout(t);
     t = setTimeout(calc, 120);
   }
 
-  // events
   ["mode","phase","voltage","kw","ampVD","dist","sq"].forEach(id=>{
     $(id)?.addEventListener("input", auto);
   });
@@ -331,7 +302,6 @@ V: —
     auto();
   });
 
-  // boot
   showPanels();
 })();
 </script>
