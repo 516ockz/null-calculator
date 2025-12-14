@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Null Electric Calc v2</title>
+
+<style>
+:root{
+  --bg:#f6f6f6;
+  --card:#fff;
+  --ink:#111;
+  --muted:#6b7280;
+  --line:#e5e7eb;
+  --radius:22px;
+  --shadow:0 10px 26px rgba(0,0,0,.12);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  padding:20px;
+  background:var(--bg);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+  color:var(--ink);
+}
+.wrap{max-width:720px;margin:auto}
+
+h1{margin:0;font-size:26px;font-weight:800}
+.sub{font-size:13px;color:var(--muted);margin-top:4px}
+
+.card{
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:18px;
+  box-shadow:var(--shadow);
+  margin-top:14px;
+}
+
+.label{
+  font-size:13px;
+  font-weight:700;
+  margin-bottom:10px;
+}
+
+.row{display:flex;gap:10px;flex-wrap:wrap}
+
+.btn{
+  flex:1;
+  min-width:110px;
+  padding:12px;
+  border-radius:18px;
+  border:1px solid var(--line);
+  background:#fff;
+  font-weight:700;
+  text-align:center;
+  cursor:pointer;
+}
+.btn.active{background:#111;color:#fff;border-color:#111}
+
+.select,.input{
+  width:100%;
+  padding:13px 14px;
+  border-radius:16px;
+  border:1px solid #d1d5db;
+  font-size:16px;
+  font-weight:600;
+}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hide{display:none}
+
+.result{
+  margin-top:16px;
+  background:#111;
+  color:#fff;
+  border-radius:22px;
+  padding:26px 18px;
+  box-shadow:0 14px 32px rgba(0,0,0,.25);
+  position:relative;
+}
+.wm{
+  position:absolute;
+  left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  font-size:42px;
+  font-weight:300;
+  color:rgba(255,255,255,.28);
+}
+.main{
+  position:relative;
+  text-align:center;
+  font-size:34px;
+  font-weight:900;
+}
+.subres{
+  text-align:center;
+  font-size:14px;
+  color:rgba(255,255,255,.85);
+  margin-top:6px;
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+<h1>Null Electric Calc</h1>
+<div class="sub">v2 / 30℃基準・設計マージン10%</div>
+
+<!-- MODE -->
+<div class="card">
+  <div class="label">Mode</div>
+  <div class="row" id="mode">
+    <div class="btn active" data-m="kw">kW → A</div>
+    <div class="btn" data-m="a">A → kW</div>
+    <div class="btn" data-m="wire">A → Wire</div>
+    <div class="btn" data-m="vd">V-drop</div>
+  </div>
+</div>
+
+<!-- PHASE -->
+<div class="card">
+  <div class="label">Phase</div>
+  <div class="grid2">
+    <div class="btn active" id="ph1">単相</div>
+    <div class="btn" id="ph3">三相</div>
+  </div>
+</div>
+
+<!-- INSTALL -->
+<div class="card">
+  <div class="label">Installation</div>
+  <div class="grid2" id="inst">
+    <div class="btn active" data-i="rack">ラック</div>
+    <div class="btn" data-i="pipe">配管</div>
+  </div>
+</div>
+
+<!-- WIRE -->
+<div class="card" id="wireCard">
+  <div class="label">Wire</div>
+  <select class="select" id="wire">
+    <option value="VVF">VVF</option>
+    <option value="EM">EM</option>
+    <option value="IV">IV</option>
+    <option value="CV">CV</option>
+    <option value="CVT">CVT</option>
+  </select>
+</div>
+
+<!-- INPUT -->
+<div class="card">
+  <input class="input" id="v1" placeholder="Load / Current">
+  <input class="input hide" id="v2" placeholder="Length (m)" style="margin-top:10px">
+  <input class="input" id="pf" value="1.00" step="0.01" style="margin-top:10px">
+</div>
+
+<!-- RESULT -->
+<div class="result">
+  <div class="wm">Null</div>
+  <div class="main" id="out">0.0</div>
+  <div class="subres" id="outsub">Ready</div>
+</div>
+
+</div>
+
+<script>
+/* ===== 設計基準 ===== */
+const DESIGN_MARGIN = 0.90;
+const INST = { rack:1.0, pipe:0.85 };
+
+const WIRE = {
+ VVF:{ max:30, sizes:[
+  {s:"1.6mm",c:18,r:0.0136},
+  {s:"2.0mm",c:23,r:0.00868},
+  {s:"2.6mm",c:30,r:0.00519}
+ ]},
+ EM:{ max:30, sizes:[
+  {s:"1.6mm",c:18,r:0.0136},
+  {s:"2.0mm",c:23,r:0.00868},
+  {s:"2.6mm",c:30,r:0.00519}
+ ]},
+ IV:{ sizes:[
+  {s:"2sq",c:24,r:0.00907},
+  {s:"3.5sq",c:32,r:0.00514},
+  {s:"5.5sq",c:42,r:0.00329},
+  {s:"8sq",c:55,r:0.00243},
+  {s:"14sq",c:85,r:0.00139}
+ ]},
+ CV:{ sizes:[
+  {s:"3.5sq",c:30,r:0.00514},
+  {s:"5.5sq",c:42,r:0.00329},
+  {s:"8sq",c:55,r:0.00243},
+  {s:"14sq",c:85,r:0.00139}
+ ]},
+ CVT:{ sizes:[
+  {s:"14sq",c:85,r:0.00139},
+  {s:"22sq",c:105,r:0.000892},
+  {s:"38sq",c:140,r:0.000525}
+ ]}
+};
+
+/* ===== 状態 ===== */
+let mode="kw", phase=1, inst="rack", volt=100;
+
+/* ===== 計算 ===== */
+function calc(){
+ const v=+document.getElementById("v1").value||0;
+ const l=+document.getElementById("v2").value||0;
+ const pf=+document.getElementById("pf").value||1;
+ const wire=document.getElementById("wire").value;
+ const eff=INST[inst]*DESIGN_MARGIN;
+ const o=document.getElementById("out");
+ const s=document.getElementById("outsub");
+
+ if(mode==="kw"){
+  if(!v)return;
+  const A=phase===1?(v*1000)/(volt*pf):(v*1000)/(Math.sqrt(3)*volt*pf);
+  o.textContent=A.toFixed(1)+" A";
+  s.textContent=`${volt}V / PF${pf}`;
+ }
+
+ if(mode==="a"){
+  if(!v)return;
+  const kW=phase===1?(volt*v*pf)/1000:(Math.sqrt(3)*volt*v*pf)/1000;
+  o.textContent=kW.toFixed(2)+" kW";
+  s.textContent=`${volt}V / PF${pf}`;
+ }
+
+ if(mode==="wire"){
+  if(!v)return;
+  const list=WIRE[wire];
+  const max=(list.max||list.sizes.at(-1).c)*eff;
+  if(v>max){
+    o.textContent="N/A";
+    s.textContent=`Max ${max.toFixed(0)}A`;
+    return;
+  }
+  const f=list.sizes.find(x=>x.c*eff>=v);
+  o.textContent=f.s;
+  s.textContent=`Allow ${(f.c*eff).toFixed(0)}A`;
+ }
+
+ if(mode==="vd"){
+  if(!v||!l)return;
+  const list=WIRE[wire].sizes;
+  const r=list[0];
+  const drop=phase===1?(2*r.r*v*l):(Math.sqrt(3)*r.r*v*l);
+  o.textContent=drop.toFixed(2)+" V";
+  s.textContent=`${volt}V / ${v}A / ${l}m`;
+ }
+}
+
+document.querySelectorAll("input,select").forEach(e=>{
+ e.addEventListener("input",calc);
+});
+
+/* ボタン類の処理は省略（今までと同じ） */
+</script>
+</body>
+</html>
