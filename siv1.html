@@ -8,28 +8,20 @@
   <style>
     :root{
       --bg:#0b0d12;
-
-      /* 白いカード */
-      --card:#f5f6fb;
-      --card-bd:rgba(0,0,0,.10);
-      --card-shadow:0 14px 40px rgba(0,0,0,.28);
-
-      /* 入力（黒い小窓） */
-      --in-bg:#0b0d12;
-      --in-bd:rgba(255,255,255,.18);
-      --in-bd2:rgba(255,255,255,.28);
-      --in-txt:#e9eefc;
-      --in-ph:rgba(233,238,252,.35);
-
-      /* 文字 */
-      --txt:#0f1115;
-      --muted:rgba(15,17,21,.60);
-
+      --panel:rgba(255,255,255,.035);
+      --bd:rgba(255,255,255,.12);
+      --bd2:rgba(255,255,255,.18);
+      --txt:#e9eefc;
+      --muted:rgba(233,238,252,.62);
+      --shadow:0 10px 30px rgba(0,0,0,.35);
       --r2:22px;
 
-      /* フォーカス時のリング（これが “緑に光る”） */
-      --glow:rgba(40, 255, 170, .28);
-      --glow2:rgba(40, 255, 170, .55);
+      --in-bg:rgba(0,0,0,.25);
+
+      /* green glow */
+      --g1:rgba(40,255,170,.25);
+      --g2:rgba(40,255,170,.55);
+      --g3:rgba(40,255,170,.9);
     }
 
     *{ box-sizing:border-box; }
@@ -37,22 +29,20 @@
       margin:0;
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP",Helvetica,Arial,sans-serif;
       background: var(--bg);
-      color:var(--in-txt);
+      color:var(--txt);
     }
     .wrap{ max-width:980px; margin:0 auto; padding:16px; }
 
-    /* ヘッダーも白い窓 */
     .top{
       padding:14px 16px;
-      background:var(--card);
-      border:1px solid var(--card-bd);
+      background:var(--panel);
+      border:1px solid var(--bd);
       border-radius:var(--r2);
-      box-shadow:var(--card-shadow);
+      box-shadow:var(--shadow);
       display:flex;
       justify-content:space-between;
       align-items:flex-end;
       gap:12px;
-      color:var(--txt);
     }
     h1{ margin:0; font-size:18px; font-weight:900; letter-spacing:.2px; }
 
@@ -67,12 +57,11 @@
     }
 
     .card{
-      background:var(--card);
-      border:1px solid var(--card-bd);
+      background:var(--panel);
+      border:1px solid var(--bd);
       border-radius:var(--r2);
-      box-shadow:var(--card-shadow);
+      box-shadow:var(--shadow);
       padding:14px;
-      color:var(--txt);
     }
 
     label{
@@ -83,41 +72,69 @@
       font-weight:800;
     }
 
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .row>*{ flex:1 1 180px; }
+    .hr{ height:1px; background:rgba(255,255,255,.15); margin:12px 0; }
+
+    /* inputs */
     select,input{
       width:100%;
       padding:11px 12px;
       border-radius:14px;
-      border:1px solid var(--in-bd);
+      border:1px solid var(--bd2);
       background:var(--in-bg);
-      color:var(--in-txt);
+      color:var(--txt);
       font-size:15px;
       outline:none;
-      transition: border-color .15s ease, box-shadow .15s ease, transform .02s ease;
+      transition:border-color .15s ease, box-shadow .15s ease;
     }
-    input::placeholder{ color:var(--in-ph); }
+    input::placeholder{ color:rgba(233,238,252,.35); }
 
-    /* これが “緑に光る” */
+    /* green focus ring */
     select:focus,
     input:focus{
-      border-color:var(--glow2);
+      border-color:var(--g3);
       box-shadow:
-        0 0 0 4px var(--glow),
-        0 10px 24px rgba(0,0,0,.35);
+        0 0 0 3px var(--g1),
+        0 0 18px rgba(40,255,170,.15);
     }
 
-    .row{ display:flex; gap:10px; flex-wrap:wrap; }
-    .row>*{ flex:1 1 180px; }
-    .hr{ height:1px; background:rgba(0,0,0,.10); margin:12px 0; }
+    /* pill toggles */
+    .pillGroup{
+      display:flex;
+      gap:8px;
+      padding:6px;
+      border-radius:999px;
+      border:1px solid var(--bd);
+      background:rgba(0,0,0,.18);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+    }
+    .pill{
+      flex:1 1 auto;
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+      color:rgba(233,238,252,.85);
+      font-weight:900;
+      font-size:13px;
+      cursor:pointer;
+      user-select:none;
+      transition: transform .04s ease, border-color .15s ease, box-shadow .15s ease, background .15s ease;
+      text-align:center;
+      white-space:nowrap;
+    }
+    .pill:active{ transform: translateY(1px); }
+    .pill.active{
+      color:var(--txt);
+      border-color:rgba(40,255,170,.55);
+      background:rgba(40,255,170,.12);
+      box-shadow:
+        0 0 0 3px rgba(40,255,170,.10),
+        0 0 20px rgba(40,255,170,.12);
+    }
 
     /* OUTPUT */
-    .outCard{
-      background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:var(--r2);
-      padding:14px;
-      box-shadow:0 14px 40px rgba(0,0,0,.35);
-      color:var(--in-txt);
-    }
     .big{
       font-size:46px;
       font-weight:1000;
@@ -165,18 +182,22 @@
       <div class="row">
         <div>
           <label>Mode</label>
-          <select id="mode">
-            <option value="kw-to-a">kW → A</option>
-            <option value="a-to-sq">A → 推奨sq（許容電流）</option>
-          </select>
+          <div class="pillGroup" role="tablist" aria-label="mode">
+            <div class="pill active" id="pillKw" data-mode="kw-to-a">kW → A</div>
+            <div class="pill" id="pillAmp" data-mode="a-to-sq">A → 推奨sq</div>
+          </div>
+          <input type="hidden" id="mode" value="kw-to-a" />
         </div>
+
         <div>
           <label>Phase</label>
-          <select id="phase">
-            <option value="single">単相</option>
-            <option value="three">三相</option>
-          </select>
+          <div class="pillGroup" role="tablist" aria-label="phase">
+            <div class="pill active" id="pillSingle" data-phase="single">単相</div>
+            <div class="pill" id="pillThree" data-phase="three">三相</div>
+          </div>
+          <input type="hidden" id="phase" value="single" />
         </div>
+
         <div>
           <label>Voltage (V)</label>
           <input id="voltage" inputmode="decimal" placeholder="200" />
@@ -221,7 +242,7 @@
     </div>
 
     <!-- OUTPUT -->
-    <div class="outCard">
+    <div class="card">
       <div class="big" id="outA">—</div>
       <div class="big2" id="outSq">Ready</div>
 
@@ -263,10 +284,15 @@
     return Number.isFinite(x) ? x : null;
   };
 
+  function setActive(groupSelector, activeEl){
+    document.querySelectorAll(groupSelector + " .pill").forEach(el=>el.classList.remove("active"));
+    activeEl.classList.add("active");
+  }
+
   function showPanels(){
-    const m = $("mode").value;
-    $("kwPanel").style.display = (m==="kw-to-a") ? "block" : "none";
-    $("aPanel").style.display  = (m==="a-to-sq") ? "block" : "none";
+    const mode = $("mode").value;
+    $("kwPanel").style.display = (mode==="kw-to-a") ? "block" : "none";
+    $("aPanel").style.display  = (mode==="a-to-sq") ? "block" : "none";
 
     const cable = $("cable").value;
     $("coresWrap").style.display = (cable==="cv") ? "block" : "none";
@@ -353,16 +379,40 @@
   let t;
   function auto(){
     clearTimeout(t);
-    t = setTimeout(calc, 80);
+    t = setTimeout(calc, 60);
   }
 
-  ["phase","voltage","kw","amp","cores"].forEach(id=>{
+  // pills: mode
+  $("pillKw").addEventListener("click", (e)=>{
+    $("mode").value = e.currentTarget.dataset.mode;
+    setActive("[aria-label='mode']", e.currentTarget);
+    showPanels(); auto();
+  });
+  $("pillAmp").addEventListener("click", (e)=>{
+    $("mode").value = e.currentTarget.dataset.mode;
+    setActive("[aria-label='mode']", e.currentTarget);
+    showPanels(); auto();
+    $("amp")?.focus();
+  });
+
+  // pills: phase
+  $("pillSingle").addEventListener("click", (e)=>{
+    $("phase").value = e.currentTarget.dataset.phase;
+    setActive("[aria-label='phase']", e.currentTarget);
+    auto();
+  });
+  $("pillThree").addEventListener("click", (e)=>{
+    $("phase").value = e.currentTarget.dataset.phase;
+    setActive("[aria-label='phase']", e.currentTarget);
+    auto();
+  });
+
+  // inputs
+  ["voltage","kw","amp","cores"].forEach(id=>{
     $(id)?.addEventListener("input", auto);
     $(id)?.addEventListener("change", auto);
   });
-
-  $("mode").addEventListener("change", () => { showPanels(); auto(); });
-  $("cable").addEventListener("change", () => { showPanels(); auto(); });
+  $("cable").addEventListener("change", ()=>{ showPanels(); auto(); });
 
   showPanels();
   calc();
