@@ -18,10 +18,10 @@
 
       --in-bg:rgba(0,0,0,.25);
 
-      /* green glow */
-      --g1:rgba(40,255,170,.25);
-      --g2:rgba(40,255,170,.55);
-      --g3:rgba(40,255,170,.9);
+      /* blue glow (控えめ) */
+      --g1:rgba(70, 160, 255, .18);
+      --g2:rgba(70, 160, 255, .40);
+      --g3:rgba(70, 160, 255, .85);
     }
 
     *{ box-sizing:border-box; }
@@ -90,13 +90,13 @@
     }
     input::placeholder{ color:rgba(233,238,252,.35); }
 
-    /* green focus ring */
+    /* blue focus ring (滲み少なめ) */
     select:focus,
     input:focus{
       border-color:var(--g3);
       box-shadow:
-        0 0 0 3px var(--g1),
-        0 0 18px rgba(40,255,170,.15);
+        0 0 0 2px var(--g1),
+        0 0 10px rgba(70,160,255,.12);
     }
 
     /* pill toggles */
@@ -125,13 +125,15 @@
       white-space:nowrap;
     }
     .pill:active{ transform: translateY(1px); }
+
+    /* blue active (滲み控えめ) */
     .pill.active{
       color:var(--txt);
-      border-color:rgba(40,255,170,.55);
-      background:rgba(40,255,170,.12);
+      border-color:var(--g2);
+      background:rgba(70,160,255,.10);
       box-shadow:
-        0 0 0 3px rgba(40,255,170,.10),
-        0 0 20px rgba(40,255,170,.12);
+        0 0 0 2px rgba(70,160,255,.10),
+        0 0 12px rgba(70,160,255,.10);
     }
 
     /* OUTPUT */
@@ -387,6 +389,7 @@
     $("mode").value = e.currentTarget.dataset.mode;
     setActive("[aria-label='mode']", e.currentTarget);
     showPanels(); auto();
+    $("kw")?.focus();
   });
   $("pillAmp").addEventListener("click", (e)=>{
     $("mode").value = e.currentTarget.dataset.mode;
@@ -404,6 +407,11 @@
   $("pillThree").addEventListener("click", (e)=>{
     $("phase").value = e.currentTarget.dataset.phase;
     setActive("[aria-label='phase']", e.currentTarget);
+
+    // 三相は無条件で200V
+    const v = $("voltage");
+    if (v) v.value = "200";
+
     auto();
   });
 
