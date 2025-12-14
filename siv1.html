@@ -3,39 +3,58 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Null Electric Calc | Simple v1</title>
+  <title>Null Electric Calc | Simple</title>
 
   <style>
     :root{
       --bg:#0b0d12;
-      --bd:rgba(255,255,255,.12);
-      --txt:#e9eefc;
-      --muted:rgba(233,238,252,.65);
-      --shadow:0 10px 30px rgba(0,0,0,.35);
+
+      /* 白いカード */
+      --card:#f5f6fb;
+      --card-bd:rgba(0,0,0,.10);
+      --card-shadow:0 14px 40px rgba(0,0,0,.28);
+
+      /* 入力（黒い小窓） */
+      --in-bg:#0b0d12;
+      --in-bd:rgba(255,255,255,.18);
+      --in-bd2:rgba(255,255,255,.28);
+      --in-txt:#e9eefc;
+      --in-ph:rgba(233,238,252,.35);
+
+      /* 文字 */
+      --txt:#0f1115;
+      --muted:rgba(15,17,21,.60);
+
       --r2:22px;
+
+      /* フォーカス時のリング（これが “緑に光る”） */
+      --glow:rgba(40, 255, 170, .28);
+      --glow2:rgba(40, 255, 170, .55);
     }
+
     *{ box-sizing:border-box; }
     body{
       margin:0;
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP",Helvetica,Arial,sans-serif;
       background: var(--bg);
-      color:var(--txt);
+      color:var(--in-txt);
     }
     .wrap{ max-width:980px; margin:0 auto; padding:16px; }
 
+    /* ヘッダーも白い窓 */
     .top{
       padding:14px 16px;
-      background:rgba(255,255,255,.04);
-      border:1px solid var(--bd);
+      background:var(--card);
+      border:1px solid var(--card-bd);
       border-radius:var(--r2);
-      box-shadow:var(--shadow);
+      box-shadow:var(--card-shadow);
       display:flex;
       justify-content:space-between;
       align-items:flex-end;
       gap:12px;
+      color:var(--txt);
     }
-    h1{ margin:0; font-size:18px; font-weight:900; }
-    .ver{ font-size:12px; color:var(--muted); font-weight:800; }
+    h1{ margin:0; font-size:18px; font-weight:900; letter-spacing:.2px; }
 
     .grid{
       display:grid;
@@ -44,15 +63,16 @@
       margin-top:12px;
     }
     @media(min-width:860px){
-      .grid{ grid-template-columns:1.1fr .9fr; }
+      .grid{ grid-template-columns:1.08fr .92fr; }
     }
 
     .card{
-      background:rgba(255,255,255,.035);
-      border:1px solid var(--bd);
+      background:var(--card);
+      border:1px solid var(--card-bd);
       border-radius:var(--r2);
-      box-shadow:var(--shadow);
+      box-shadow:var(--card-shadow);
       padding:14px;
+      color:var(--txt);
     }
 
     label{
@@ -62,31 +82,50 @@
       margin-bottom:6px;
       font-weight:800;
     }
+
     select,input{
       width:100%;
       padding:11px 12px;
       border-radius:14px;
-      border:1px solid var(--bd);
-      background:rgba(0,0,0,.25);
-      color:var(--txt);
+      border:1px solid var(--in-bd);
+      background:var(--in-bg);
+      color:var(--in-txt);
       font-size:15px;
       outline:none;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .02s ease;
     }
-    input::placeholder{ color:rgba(233,238,252,.35); }
+    input::placeholder{ color:var(--in-ph); }
+
+    /* これが “緑に光る” */
+    select:focus,
+    input:focus{
+      border-color:var(--glow2);
+      box-shadow:
+        0 0 0 4px var(--glow),
+        0 10px 24px rgba(0,0,0,.35);
+    }
 
     .row{ display:flex; gap:10px; flex-wrap:wrap; }
     .row>*{ flex:1 1 180px; }
-    .hr{ height:1px; background:rgba(255,255,255,.15); margin:12px 0; }
+    .hr{ height:1px; background:rgba(0,0,0,.10); margin:12px 0; }
 
-    /* RESULT */
+    /* OUTPUT */
+    .outCard{
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:var(--r2);
+      padding:14px;
+      box-shadow:0 14px 40px rgba(0,0,0,.35);
+      color:var(--in-txt);
+    }
     .big{
-      font-size:44px;
+      font-size:46px;
       font-weight:1000;
       letter-spacing:.2px;
       line-height:1.05;
     }
     .big2{
-      margin-top:8px;
+      margin-top:10px;
       font-size:22px;
       font-weight:950;
       color:rgba(233,238,252,.92);
@@ -95,28 +134,21 @@
     .mini{
       margin-top:12px;
       font-size:12.5px;
-      color:var(--muted);
+      color:rgba(233,238,252,.62);
       line-height:1.6;
       white-space:pre-wrap;
       background:rgba(0,0,0,.22);
-      border:1px solid var(--bd);
+      border:1px solid rgba(255,255,255,.10);
       border-radius:14px;
       padding:10px;
-    }
-
-    .hint{
-      margin-top:8px;
-      font-size:12px;
-      color:rgba(233,238,252,.5);
-      line-height:1.4;
     }
 
     footer{
       margin-top:10px;
       padding-top:10px;
-      border-top:1px dashed rgba(255,255,255,.2);
+      border-top:1px dashed rgba(255,255,255,.22);
       font-size:12px;
-      color:var(--muted);
+      color:rgba(233,238,252,.55);
     }
   </style>
 </head>
@@ -125,7 +157,6 @@
 <div class="wrap">
   <div class="top">
     <h1>Null Electric Calc</h1>
-    <div class="ver">Simple v1.0.2</div>
   </div>
 
   <div class="grid">
@@ -181,19 +212,16 @@
       <div id="kwPanel">
         <label>Power (kW)</label>
         <input id="kw" inputmode="decimal" placeholder="5.5" />
-        <div class="hint">PF=0.85固定</div>
       </div>
 
       <div id="aPanel" style="display:none">
         <label>Current (A)</label>
         <input id="amp" inputmode="decimal" placeholder="30" />
       </div>
-
-      <div class="mini">入力すると自動で更新（ボタン無し）</div>
     </div>
 
     <!-- OUTPUT -->
-    <div class="card">
+    <div class="outCard">
       <div class="big" id="outA">—</div>
       <div class="big2" id="outSq">Ready</div>
 
@@ -206,9 +234,7 @@
 
 <script>
 (() => {
-  const VERSION = "simple-v1.0.2";
   const $ = id => document.getElementById(id);
-
   const PF = 0.85;
 
   // 許容電流テーブル（固定条件）
@@ -286,7 +312,6 @@
     const root = (phase==="three") ? Math.sqrt(3) : 1;
 
     let I = null;
-
     if (mode==="kw-to-a"){
       const kW = num($("kw").value);
       if (Number.isFinite(V) && Number.isFinite(kW)){
@@ -303,7 +328,7 @@
     if (!Number.isFinite(I)){
       outA.textContent = "—";
       outSq.textContent = "Ready";
-      outMini.textContent = "入力すると自動表示";
+      outMini.textContent = "PF=0.85 / 許容電流は表の固定条件";
       return;
     }
 
@@ -315,7 +340,7 @@
 
     if (sug?.sq){
       outSq.textContent = `${cable}${cores} → ${sug.sq} sq`;
-      outMini.textContent = `許容電流: ${sug.amp}A / I: ${I.toFixed(2)}A / Ver: ${VERSION}`;
+      outMini.textContent = `許容電流: ${sug.amp}A / I: ${I.toFixed(2)}A`;
     } else if (sug?.maxSq){
       outSq.textContent = `NG（最大でも不足）`;
       outMini.textContent = `最大: ${cable}${cores} ${sug.maxSq}sq（${sug.maxAmp ?? "—"}A） / I: ${I.toFixed(2)}A`;
@@ -331,13 +356,11 @@
     t = setTimeout(calc, 80);
   }
 
-  // 入力系
   ["phase","voltage","kw","amp","cores"].forEach(id=>{
     $(id)?.addEventListener("input", auto);
     $(id)?.addEventListener("change", auto);
   });
 
-  // 重要：mode/cableは表示も更新してから計算
   $("mode").addEventListener("change", () => { showPanels(); auto(); });
   $("cable").addEventListener("change", () => { showPanels(); auto(); });
 
