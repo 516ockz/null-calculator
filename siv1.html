@@ -125,7 +125,7 @@
 <div class="wrap">
   <div class="top">
     <h1>Null Electric Calc</h1>
-    <div class="ver">Simple v1</div>
+    <div class="ver">Simple v1.0.2</div>
   </div>
 
   <div class="grid">
@@ -206,7 +206,7 @@
 
 <script>
 (() => {
-  const VERSION = "simple-v1.0.1";
+  const VERSION = "simple-v1.0.2";
   const $ = id => document.getElementById(id);
 
   const PF = 0.85;
@@ -331,10 +331,15 @@
     t = setTimeout(calc, 80);
   }
 
-  ["mode","phase","voltage","kw","amp","cable","cores"].forEach(id=>{
+  // 入力系
+  ["phase","voltage","kw","amp","cores"].forEach(id=>{
     $(id)?.addEventListener("input", auto);
     $(id)?.addEventListener("change", auto);
   });
+
+  // 重要：mode/cableは表示も更新してから計算
+  $("mode").addEventListener("change", () => { showPanels(); auto(); });
+  $("cable").addEventListener("change", () => { showPanels(); auto(); });
 
   showPanels();
   calc();
