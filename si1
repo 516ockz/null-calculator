@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Null Electric Calc | Simple v1</title>
+
+  <style>
+    :root{
+      --bg:#0b0d12;
+      --bd:rgba(255,255,255,.12);
+      --txt:#e9eefc;
+      --muted:rgba(233,238,252,.65);
+      --shadow:0 10px 30px rgba(0,0,0,.35);
+      --r2:22px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP",Helvetica,Arial,sans-serif;
+      background: var(--bg);
+      color:var(--txt);
+    }
+    .wrap{ max-width:980px; margin:0 auto; padding:16px; }
+
+    .top{
+      padding:14px 16px;
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--bd);
+      border-radius:var(--r2);
+      box-shadow:var(--shadow);
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:12px;
+    }
+    h1{ margin:0; font-size:18px; font-weight:900; }
+    .ver{ font-size:12px; color:var(--muted); font-weight:800; }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+      margin-top:12px;
+    }
+    @media(min-width:860px){
+      .grid{ grid-template-columns:1.1fr .9fr; }
+    }
+
+    .card{
+      background:rgba(255,255,255,.035);
+      border:1px solid var(--bd);
+      border-radius:var(--r2);
+      box-shadow:var(--shadow);
+      padding:14px;
+    }
+
+    label{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+      font-weight:800;
+    }
+    select,input{
+      width:100%;
+      padding:11px 12px;
+      border-radius:14px;
+      border:1px solid var(--bd);
+      background:rgba(0,0,0,.25);
+      color:var(--txt);
+      font-size:15px;
+      outline:none;
+    }
+    input::placeholder{ color:rgba(233,238,252,.35); }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .row>*{ flex:1 1 180px; }
+    .hr{ height:1px; background:rgba(255,255,255,.15); margin:12px 0; }
+
+    /* RESULT */
+    .big{
+      font-size:44px;
+      font-weight:1000;
+      letter-spacing:.2px;
+      line-height:1.05;
+    }
+    .big2{
+      margin-top:8px;
+      font-size:22px;
+      font-weight:950;
+      color:rgba(233,238,252,.92);
+      line-height:1.2;
+    }
+    .mini{
+      margin-top:12px;
+      font-size:12.5px;
+      color:var(--muted);
+      line-height:1.6;
+      white-space:pre-wrap;
+      background:rgba(0,0,0,.22);
+      border:1px solid var(--bd);
+      border-radius:14px;
+      padding:10px;
+    }
+
+    .hint{
+      margin-top:8px;
+      font-size:12px;
+      color:rgba(233,238,252,.5);
+      line-height:1.4;
+    }
+
+    footer{
+      margin-top:10px;
+      padding-top:10px;
+      border-top:1px dashed rgba(255,255,255,.2);
+      font-size:12px;
+      color:var(--muted);
+    }
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>Null Electric Calc</h1>
+    <div class="ver">Simple v1</div>
+  </div>
+
+  <div class="grid">
+    <!-- INPUT -->
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>Mode</label>
+          <select id="mode">
+            <option value="kw-to-a">kW → A</option>
+            <option value="a-to-sq">A → 推奨sq（許容電流）</option>
+          </select>
+        </div>
+        <div>
+          <label>Phase</label>
+          <select id="phase">
+            <option value="single">単相</option>
+            <option value="three">三相</option>
+          </select>
+        </div>
+        <div>
+          <label>Voltage (V)</label>
+          <input id="voltage" inputmode="decimal" placeholder="200" />
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <div>
+          <label>Cable</label>
+          <select id="cable">
+            <option value="cv">CV</option>
+            <option value="cvt">CVT</option>
+            <option value="mlfc">MLFC</option>
+            <option value="lkgb">LKGB</option>
+          </select>
+        </div>
+
+        <div id="coresWrap">
+          <label>CV Cores</label>
+          <select id="cores">
+            <option value="1">単芯</option>
+            <option value="2">2芯</option>
+            <option value="3" selected>3芯</option>
+            <option value="4">4芯</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div id="kwPanel">
+        <label>Power (kW)</label>
+        <input id="kw" inputmode="decimal" placeholder="5.5" />
+        <div class="hint">PF=0.85固定</div>
+      </div>
+
+      <div id="aPanel" style="display:none">
+        <label>Current (A)</label>
+        <input id="amp" inputmode="decimal" placeholder="30" />
+      </div>
+
+      <div class="mini">入力すると自動で更新（ボタン無し）</div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class="card">
+      <div class="big" id="outA">—</div>
+      <div class="big2" id="outSq">Ready</div>
+
+      <div class="mini" id="outMini">PF=0.85 / 許容電流は表の固定条件</div>
+
+      <footer id="null-copyright">© 2025 Null / 516ockz</footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const VERSION = "simple-v1.0.1";
+  const $ = id => document.getElementById(id);
+
+  const PF = 0.85;
+
+  // 許容電流テーブル（固定条件）
+  const AMP_CV_40C = {
+    2:{1:31,2:28,3:23,4:23}, 3.5:{1:44,2:39,3:33,4:33}, 5.5:{1:58,2:52,3:44,4:44},
+    8:{1:72,2:65,3:54,4:54}, 14:{1:100,2:91,3:76,4:76}, 22:{1:130,2:120,3:100,4:100},
+    38:{1:190,2:170,3:140,4:140}, 60:{1:255,2:225,3:190,4:190}, 100:{1:355,2:310,3:260,4:260},
+    150:{1:455,2:400,3:340,4:340}, 200:{1:545,2:485,3:410,4:410}, 250:{1:620,2:560,3:470,4:470},
+    325:{1:725,2:660,3:555,4:555}
+  };
+  const AMP_CVT_40C = { 8:62, 14:86, 22:110, 38:155, 60:210, 100:290, 150:380, 200:465, 250:535, 325:635 };
+  const AMP_MLFC_90C = { 2:34, 3.5:47, 5.5:63, 8:78, 14:113, 22:148, 38:208, 60:279, 100:384, 150:509, 200:605 };
+  const AMP_LKGB_100C = { 0.75:23, 1.25:31, 2:44, 3.5:60, 5.5:80, 8:99, 14:143, 22:187, 38:264, 60:353, 100:485 };
+
+  const num = (v) => {
+    if (v === null || v === undefined) return null;
+    let s = String(v).trim();
+    if (!s) return null;
+    s = s
+      .replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
+      .replace(/[．]/g, ".")
+      .replace(/[，]/g, ",")
+      .replace(/[－]/g, "-")
+      .replace(/,/g, "");
+    const x = parseFloat(s);
+    return Number.isFinite(x) ? x : null;
+  };
+
+  function showPanels(){
+    const m = $("mode").value;
+    $("kwPanel").style.display = (m==="kw-to-a") ? "block" : "none";
+    $("aPanel").style.display  = (m==="a-to-sq") ? "block" : "none";
+
+    const cable = $("cable").value;
+    $("coresWrap").style.display = (cable==="cv") ? "block" : "none";
+  }
+
+  function listCandidates(){
+    const cable = $("cable").value;
+    const keys =
+      cable==="cv"  ? Object.keys(AMP_CV_40C) :
+      cable==="cvt" ? Object.keys(AMP_CVT_40C) :
+      cable==="mlfc"? Object.keys(AMP_MLFC_90C) :
+      cable==="lkgb"? Object.keys(AMP_LKGB_100C) : [];
+    return keys.map(Number).sort((a,b)=>a-b);
+  }
+
+  function getAmpBySq(sq){
+    const cable = $("cable").value;
+    if (cable==="cv") {
+      const cores = parseInt($("cores").value,10);
+      return AMP_CV_40C[sq]?.[cores] ?? null;
+    }
+    if (cable==="cvt") return AMP_CVT_40C[sq] ?? null;
+    if (cable==="mlfc") return AMP_MLFC_90C[sq] ?? null;
+    if (cable==="lkgb") return AMP_LKGB_100C[sq] ?? null;
+    return null;
+  }
+
+  function suggestSqByAmp(I){
+    if (!Number.isFinite(I) || I<=0) return null;
+    const cands = listCandidates();
+    for (const sq of cands){
+      const amp = getAmpBySq(sq);
+      if (Number.isFinite(amp) && I <= amp) return {sq, amp};
+    }
+    const maxSq = cands[cands.length-1] ?? null;
+    return {sq:null, amp:null, maxSq, maxAmp: maxSq ? getAmpBySq(maxSq) : null};
+  }
+
+  function calc(){
+    const mode = $("mode").value;
+    const phase = $("phase").value;
+    const V = num($("voltage").value);
+    const root = (phase==="three") ? Math.sqrt(3) : 1;
+
+    let I = null;
+
+    if (mode==="kw-to-a"){
+      const kW = num($("kw").value);
+      if (Number.isFinite(V) && Number.isFinite(kW)){
+        I = (kW*1000) / (V*root*PF);
+      }
+    } else {
+      I = num($("amp").value);
+    }
+
+    const outA = $("outA");
+    const outSq = $("outSq");
+    const outMini = $("outMini");
+
+    if (!Number.isFinite(I)){
+      outA.textContent = "—";
+      outSq.textContent = "Ready";
+      outMini.textContent = "入力すると自動表示";
+      return;
+    }
+
+    outA.textContent = `${I.toFixed(2)} A`;
+
+    const sug = suggestSqByAmp(I);
+    const cable = $("cable").value.toUpperCase();
+    const cores = ($("cable").value==="cv") ? ` ${$("cores").value}C` : "";
+
+    if (sug?.sq){
+      outSq.textContent = `${cable}${cores} → ${sug.sq} sq`;
+      outMini.textContent = `許容電流: ${sug.amp}A / I: ${I.toFixed(2)}A / Ver: ${VERSION}`;
+    } else if (sug?.maxSq){
+      outSq.textContent = `NG（最大でも不足）`;
+      outMini.textContent = `最大: ${cable}${cores} ${sug.maxSq}sq（${sug.maxAmp ?? "—"}A） / I: ${I.toFixed(2)}A`;
+    } else {
+      outSq.textContent = "—";
+      outMini.textContent = "テーブル未設定";
+    }
+  }
+
+  let t;
+  function auto(){
+    clearTimeout(t);
+    t = setTimeout(calc, 80);
+  }
+
+  ["mode","phase","voltage","kw","amp","cable","cores"].forEach(id=>{
+    $(id)?.addEventListener("input", auto);
+    $(id)?.addEventListener("change", auto);
+  });
+
+  showPanels();
+  calc();
+})();
+</script>
+</body>
+</html>
