@@ -3,21 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Null Electric Calc</title>
+  <title>Null Electric Calc | Basic</title>
 
   <style>
     :root{
       --bg:#0b0d12;
-      --panel:#101522;
       --card:#0f172a;
-      --card2:#0b1220;
-      --bd:rgba(255,255,255,.10);
-      --bd2:rgba(255,255,255,.14);
+      --bd:rgba(255,255,255,.12);
       --txt:#e9eefc;
-      --muted:rgba(233,238,252,.68);
-      --muted2:rgba(233,238,252,.50);
-      --accent:rgba(233,238,252,.18);
-      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --muted:rgba(233,238,252,.65);
+      --shadow:0 10px 30px rgba(0,0,0,.35);
       --r:18px;
       --r2:22px;
     }
@@ -26,697 +21,301 @@
     body{
       margin:0;
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP",Helvetica,Arial,sans-serif;
-      background: radial-gradient(1200px 600px at 20% -10%, rgba(255,255,255,.06), transparent 60%),
-                  radial-gradient(1000px 500px at 90% 0%, rgba(255,255,255,.05), transparent 55%),
-                  var(--bg);
+      background: var(--bg);
       color:var(--txt);
     }
 
-    .wrap{ max-width:1040px; margin:0 auto; padding:18px; }
+    .wrap{ max-width:980px; margin:0 auto; padding:16px; }
 
     .top{
-      display:flex; align-items:flex-end; justify-content:space-between;
-      gap:14px; flex-wrap:wrap;
-      padding:16px 16px 12px;
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      display:flex; justify-content:space-between; align-items:flex-end;
+      gap:12px; flex-wrap:wrap;
+      padding:14px 16px;
+      background:rgba(255,255,255,.04);
       border:1px solid var(--bd);
-      border-radius: var(--r2);
-      box-shadow: var(--shadow);
+      border-radius:var(--r2);
+      box-shadow:var(--shadow);
     }
 
-    .brand{
-      display:flex; flex-direction:column; gap:6px;
-      min-width:240px;
-    }
+    h1{ margin:0; font-size:18px; font-weight:900; }
+    .spec{ font-size:12px; color:var(--muted); display:flex; gap:10px; flex-wrap:wrap; }
 
-    .title{
-      margin:0;
-      font-size:18px;
-      letter-spacing:.2px;
-      font-weight:800;
-    }
-
-    .subtitle{
-      font-size:12px;
-      color:var(--muted);
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    .pill{
-      display:inline-flex; align-items:center; gap:10px;
-      padding:10px 12px;
+    .status{
+      padding:8px 12px;
       border:1px solid var(--bd);
       border-radius:999px;
-      background: rgba(255,255,255,.03);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+      font-size:12px;
+      font-weight:900;
     }
-    .pill .k{ color:var(--muted2); font-size:12px; font-weight:700; letter-spacing:.2px; }
-    .pill .v{ font-size:12px; font-weight:800; }
 
     .grid{
       display:grid;
-      grid-template-columns: 1fr;
+      grid-template-columns:1fr;
       gap:12px;
       margin-top:12px;
     }
-    @media(min-width: 920px){
-      .grid{ grid-template-columns: 1.25fr 0.75fr; }
+    @media(min-width:860px){
+      .grid{ grid-template-columns:1.2fr .8fr; }
     }
 
     .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.02));
+      background:rgba(255,255,255,.035);
       border:1px solid var(--bd);
-      border-radius: var(--r2);
-      box-shadow: var(--shadow);
+      border-radius:var(--r2);
+      box-shadow:var(--shadow);
       padding:14px;
     }
 
-    .card h2{
-      margin:0 0 10px;
-      font-size:13px;
+    label{
+      display:block;
+      font-size:12px;
       color:var(--muted);
-      font-weight:800;
-      letter-spacing:.2px;
+      margin-bottom:6px;
+      font-weight:700;
+    }
+
+    select,input{
+      width:100%;
+      padding:11px 12px;
+      border-radius:14px;
+      border:1px solid var(--bd);
+      background:rgba(0,0,0,.25);
+      color:var(--txt);
+      font-size:15px;
     }
 
     .row{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
-      align-items:flex-end;
     }
-    .row > *{ flex: 1 1 180px; }
+    .row>*{ flex:1 1 180px; }
 
-    label{
-      display:block;
-      font-size:12px;
-      color:var(--muted);
-      margin:0 0 6px;
-      font-weight:700;
-    }
-
-    select, input{
-      width:100%;
-      padding:11px 12px;
-      border-radius: 14px;
-      border:1px solid var(--bd2);
-      background: rgba(0,0,0,.22);
-      color:var(--txt);
-      outline:none;
-      font-size:15px;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
-    }
-    select:focus, input:focus{
-      border-color: rgba(255,255,255,.26);
-      box-shadow: 0 0 0 4px rgba(233,238,252,.06);
-    }
-
-    .hr{
-      height:1px;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
-      margin:12px 0;
-    }
-
-    .btns{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      align-items:center;
-    }
-
-    button{
-      border-radius: 14px;
-      border:1px solid var(--bd2);
-      background: rgba(255,255,255,.05);
-      color:var(--txt);
-      padding:11px 12px;
-      font-size:14px;
-      font-weight:800;
-      cursor:pointer;
-      user-select:none;
-    }
-    button:active{ transform: translateY(1px); }
-    button.primary{
-      background: rgba(255,255,255,.10);
-      border-color: rgba(255,255,255,.26);
-    }
-    button.ghost{
-      background: rgba(0,0,0,.18);
-    }
+    .hr{ height:1px; background:rgba(255,255,255,.15); margin:12px 0; }
 
     .kpi{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      padding:6px 2px 2px;
-    }
-    .kpi .big{
       font-size:38px;
-      line-height:1;
       font-weight:900;
-      letter-spacing:.2px;
     }
-    .kpi .sub{
-      color:var(--muted);
+    .kpi-sub{
       font-size:13px;
-      font-weight:700;
+      color:var(--muted);
+      margin-top:6px;
     }
-
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:10px 12px;
-      border-radius: 14px;
-      border:1px solid var(--bd);
-      background: rgba(0,0,0,.20);
-      width:100%;
-    }
-    .badge .t{ color:var(--muted2); font-size:12px; font-weight:800; }
-    .badge .m{ font-size:13px; font-weight:900; }
 
     .mono{
-      font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      margin-top:10px;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
       font-size:12.5px;
-      white-space:pre-wrap;
-      line-height:1.65;
-      color: rgba(233,238,252,.86);
-      background: rgba(0,0,0,.20);
-      border:1px solid var(--bd);
-      border-radius: var(--r);
-      padding:12px;
-    }
-
-    .hint{
-      margin-top:8px;
-      color:var(--muted);
-      font-size:12px;
       line-height:1.6;
+      white-space:pre-wrap;
+      background:rgba(0,0,0,.25);
+      border:1px solid var(--bd);
+      border-radius:14px;
+      padding:10px;
     }
 
-    .shortcuts{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
+    details{
+      margin-top:12px;
+      border:1px solid var(--bd);
+      border-radius:var(--r2);
+      padding:10px 12px;
+      background:rgba(0,0,0,.25);
     }
-    .shortcuts button{
-      padding:9px 10px;
-      border-radius: 999px;
-      font-size:12px;
-      font-weight:900;
-    }
-
-    /* Help */
-    .help{
-      margin-top: 12px;
-      border: 1px solid var(--bd);
-      border-radius: var(--r2);
-      background: rgba(0,0,0,.18);
-      padding: 10px 12px;
-    }
-    .help summary{
+    summary{
       cursor:pointer;
       font-weight:900;
-      user-select:none;
-      color: rgba(233,238,252,.92);
+      font-size:13px;
     }
-    .help summary::-webkit-details-marker{ display:none; }
-    .help-body{
-      margin-top:10px;
-      color: rgba(233,238,252,.90);
-      font-size: 13px;
-      line-height: 1.75;
+    details p, details li{
+      font-size:13px;
+      color:var(--muted);
     }
-    .help-body h3{
-      margin: 12px 0 6px;
-      font-size: 13px;
-      color: rgba(233,238,252,.92);
-    }
-    .help-body ul{ margin:6px 0 0 18px; padding:0; }
-    .help-body li{ margin:4px 0; color: rgba(233,238,252,.86); }
-    .help-body .muted{ color: var(--muted); }
 
     footer{
       margin-top:10px;
       padding-top:10px;
-      border-top:1px dashed rgba(255,255,255,.16);
-      color: var(--muted);
+      border-top:1px dashed rgba(255,255,255,.2);
       font-size:12px;
+      color:var(--muted);
     }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div class="brand">
-        <h1 class="title">Null Electric Calc</h1>
-        <div class="subtitle">
-          <span>Basic</span>
-          <span>30℃基準</span>
-          <span>ラック敷設</span>
-          <span>力率0.85</span>
-          <span>効率0.90</span>
-          <span>マージン10%</span>
+<div class="wrap">
+
+  <div class="top">
+    <div>
+      <h1>Null Electric Calc</h1>
+      <div class="spec">
+        <span>Basic</span>
+        <span>ラック</span>
+        <span>30℃</span>
+        <span>pf 0.85</span>
+        <span>eff 0.90</span>
+        <span>+10%</span>
+      </div>
+    </div>
+    <div class="status" id="status">Ready</div>
+  </div>
+
+  <div class="grid">
+    <!-- INPUT -->
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>Mode</label>
+          <select id="mode">
+            <option value="kw-to-a">kW → A</option>
+            <option value="a-to-kw">A → kW</option>
+            <option value="vdrop">V-drop</option>
+          </select>
+        </div>
+        <div>
+          <label>Phase</label>
+          <select id="phase">
+            <option value="single">単相</option>
+            <option value="three">三相</option>
+          </select>
+        </div>
+        <div>
+          <label>Voltage (V)</label>
+          <input id="voltage" inputmode="decimal" placeholder="200" />
         </div>
       </div>
 
-      <div class="pill">
-        <span class="k">Status</span>
-        <span class="v" id="status">Ready</span>
+      <div class="hr"></div>
+
+      <div id="kw-to-a">
+        <label>Power (kW)</label>
+        <input id="kw" inputmode="decimal" placeholder="5.5" />
       </div>
-    </div>
 
-    <div class="grid">
-      <!-- LEFT -->
-      <div class="card">
-        <h2>Input</h2>
+      <div id="a-to-kw" style="display:none">
+        <label>Current (A)</label>
+        <input id="amp" inputmode="decimal" placeholder="25" />
+      </div>
 
+      <div id="vdrop" style="display:none">
         <div class="row">
           <div>
-            <label>Mode</label>
-            <select id="mode">
-              <option value="kw-to-a">kW → A</option>
-              <option value="a-to-kw">A → kW</option>
-              <option value="vdrop">V-drop</option>
-            </select>
+            <label>Current (A)</label>
+            <input id="ampVD" inputmode="decimal" />
           </div>
-
           <div>
-            <label>Phase</label>
-            <select id="phase">
-              <option value="single">単相</option>
-              <option value="three">三相</option>
-            </select>
+            <label>Distance (m)</label>
+            <input id="dist" inputmode="decimal" />
           </div>
-
           <div>
-            <label>Voltage (V)</label>
-            <input id="voltage" inputmode="decimal" placeholder="例 100 / 200 / 400" />
+            <label>Wire (sq)</label>
+            <input id="sq" inputmode="decimal" />
           </div>
         </div>
-
-        <div class="hr"></div>
-
-        <!-- kw-to-a -->
-        <div id="panel-kw-to-a">
-          <div class="row">
-            <div>
-              <label>Power (kW)</label>
-              <input id="kw" inputmode="decimal" placeholder="例 5.5" />
-            </div>
-          </div>
-        </div>
-
-        <!-- a-to-kw -->
-        <div id="panel-a-to-kw" style="display:none;">
-          <div class="row">
-            <div>
-              <label>Current (A)</label>
-              <input id="amp" inputmode="decimal" placeholder="例 25" />
-            </div>
-          </div>
-        </div>
-
-        <!-- vdrop -->
-        <div id="panel-vdrop" style="display:none;">
-          <div class="row">
-            <div>
-              <label>Current (A)</label>
-              <input id="ampVD" inputmode="decimal" placeholder="例 30" />
-            </div>
-            <div>
-              <label>Distance (m)（片道）</label>
-              <input id="dist" inputmode="decimal" placeholder="例 30" />
-            </div>
-            <div>
-              <label>Wire (sq)</label>
-              <input id="sq" inputmode="decimal" placeholder="例 5.5 / 14 / 22" />
-            </div>
-          </div>
-
-          <div class="row" style="margin-top:10px;">
-            <div>
-              <label>V-drop limit（%）</label>
-              <input id="vlimit" inputmode="decimal" placeholder="例 2.0" />
-            </div>
-            <div>
-              <label>Shortcut</label>
-              <div class="shortcuts">
-                <button type="button" class="ghost" data-dist="10">10m</button>
-                <button type="button" class="ghost" data-dist="20">20m</button>
-                <button type="button" class="ghost" data-dist="30">30m</button>
-                <button type="button" class="ghost" data-dist="50">50m</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="hint">
-            電圧降下は簡易式（抵抗ベース / Cu想定）
-          </div>
-        </div>
-
-        <div class="hr"></div>
-
-        <div class="btns">
-          <button type="button" class="primary" id="calcBtn">Calculate</button>
-          <button type="button" id="copyBtn">Copy result</button>
-          <button type="button" class="ghost" id="resetBtn">Reset</button>
-        </div>
-      </div>
-
-      <!-- RIGHT -->
-      <div class="card">
-        <h2>Output</h2>
-
-        <div class="kpi">
-          <div class="big" id="kpi">—</div>
-          <div class="sub" id="kpiSub">入力して Calculate</div>
-        </div>
-
-        <div class="hr"></div>
-
-        <div class="badge">
-          <div class="t">Fixed spec</div>
-          <div class="m">ラック / 30℃ / pf0.85 / eff0.90 / +10%</div>
-        </div>
-
-        <div class="hr"></div>
-
-        <div class="mono" id="detail">Mode: —
-Phase: —
-V=—
-</div>
-
-        <details class="help">
-          <summary>使い方・計算条件（タップで表示）</summary>
-          <div class="help-body">
-            <h3>このツールについて</h3>
-            <div class="muted">
-              kW と A の換算、電圧降下の目安を素早く確認するための社内ツール
-              現場で迷わないために標準条件は固定
-            </div>
-
-            <h3>操作の流れ</h3>
-            <ul>
-              <li>Mode で計算内容を選ぶ（kW→A / A→kW / V-drop）</li>
-              <li>必要な項目を入力して Calculate</li>
-              <li>Copy result で結果をコピーしてLINEなどに貼れる</li>
-            </ul>
-
-            <h3>入力項目の意味</h3>
-            <ul>
-              <li><b>電圧（V）</b> 使う電圧（例 100 / 200 / 400）</li>
-              <li><b>単相 / 三相</b> 電源の種類（家庭系は単相、動力は三相が多い）</li>
-              <li><b>距離（m）</b> 電圧降下用の片道距離</li>
-              <li><b>sq</b> 電線の太さ（断面積）</li>
-            </ul>
-
-            <h3>結果の見方</h3>
-            <ul>
-              <li><b>大きい数値</b> が計算結果（A / kW / 電圧降下率）</li>
-              <li><b>Status</b> が OK / NG の目安（社内基準）</li>
-            </ul>
-
-            <h3>計算条件（標準 固定）</h3>
-            <ul>
-              <li>施設条件 ラック敷設</li>
-              <li>周囲温度 30℃</li>
-              <li>力率 0.85</li>
-              <li>効率 0.90</li>
-              <li>設計マージン 10%</li>
-              <li>電圧降下 簡易式（抵抗ベース / Cu想定）</li>
-            </ul>
-
-            <h3>注意</h3>
-            <div class="muted">
-              配管、多条敷設、高温環境など条件が違う場合は別途検討
-              最終判断は現場条件と図面に合わせてお願いします
-            </div>
-          </div>
-        </details>
-
-        <footer id="null-copyright">© 2025 Null / 516ockz</footer>
       </div>
     </div>
+
+    <!-- OUTPUT -->
+    <div class="card">
+      <div class="kpi" id="kpi">—</div>
+      <div class="kpi-sub" id="kpiSub">入力すると自動計算</div>
+
+      <div class="mono" id="detail">
+Mode: —
+Phase: —
+V: —
+      </div>
+
+      <details>
+        <summary>使い方・計算条件</summary>
+        <ul>
+          <li>入力すると自動で計算されます</li>
+          <li>kW↔A、電圧降下の目安確認用</li>
+          <li>標準条件は社内基準で固定</li>
+        </ul>
+        <p>
+          ラック敷設 / 30℃ / 力率0.85 / 効率0.90 / マージン10%<br>
+          条件が異なる場合は別途検討してください
+        </p>
+      </details>
+
+      <footer id="null-copyright">
+        © 2025 Null / 516ockz
+      </footer>
+    </div>
   </div>
+</div>
 
 <script>
 (() => {
-  "use strict";
+  const $ = id => document.getElementById(id);
+  const PF = 0.85, EFF = 0.90, M = 0.10;
 
-  const $ = (id) => document.getElementById(id);
-  const setStatus = (t) => { $("status").textContent = t; };
-
-  // 数値パースを少し強く（iPhoneの妙な記号混入にも耐える）
-  const num = (v, d=0) => {
-    let s = String(v ?? "").trim();
-
-    // 全角→半角（数字/記号）
-    s = s
-      .replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
-      .replace(/[．]/g, ".")
-      .replace(/[，]/g, ",")
-      .replace(/[－]/g, "-");
-
-    // カンマ除去
-    s = s.replace(/,/g, "");
-
-    const x = parseFloat(s);
-    return Number.isFinite(x) ? x : d;
+  const num = v => {
+    if (!v) return null;
+    return parseFloat(String(v).replace(/[０-９．]/g,c=>
+      String.fromCharCode(c.charCodeAt(0)-0xFEE0)));
   };
 
-  // Basic fixed spec
-  const PF = 0.85;
-  const EFF = 0.90;
-  const MARGIN = 0.10;
-  const INSTALL = "rack";
-  const TEMP = 30;
-
-  // Simple license guard
-  function licenseOK(){
-    const el = $("null-copyright");
-    if (!el) return false;
-    const txt = (el.textContent || "").toLowerCase();
-    if (!txt.includes("null") || !txt.includes("516")) return false;
-    const st = getComputedStyle(el);
-    if (st.display === "none" || st.visibility === "hidden") return false;
-    return true;
-  }
-
-  // Persist minimal state
-  const KEY = "null_calc_basic_state";
-  function saveState(){
-    const state = {
-      mode: $("mode").value,
-      phase: $("phase").value,
-      voltage: $("voltage").value,
-      kw: $("kw").value,
-      amp: $("amp").value,
-      ampVD: $("ampVD").value,
-      dist: $("dist").value,
-      sq: $("sq").value,
-      vlimit: $("vlimit").value
-    };
-    localStorage.setItem(KEY, JSON.stringify(state));
-  }
-  function loadState(){
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return;
-    try{
-      const s = JSON.parse(raw);
-      for (const [k,v] of Object.entries(s)){
-        if ($(k)) $(k).value = v;
-      }
-    }catch{}
-  }
-
-  function updateModeUI(){
-    const m = $("mode").value;
-    $("panel-kw-to-a").style.display = (m === "kw-to-a") ? "block" : "none";
-    $("panel-a-to-kw").style.display = (m === "a-to-kw") ? "block" : "none";
-    $("panel-vdrop").style.display   = (m === "vdrop")   ? "block" : "none";
-
-    // 画面切替時は「Ready」に戻す（うるさくしない）
-    setStatus("Ready");
-    $("kpi").textContent = "—";
-    $("kpiSub").textContent = "入力して Calculate";
-  }
-
-  // 入力が揃っているか（空文字判定）
-  function hasAll(...ids){
-    return ids.every(id => {
-      const v = ($(id)?.value ?? "").toString().trim();
-      return v.length > 0;
-    });
+  function showPanels(){
+    $("kw-to-a").style.display = $("mode").value==="kw-to-a"?"block":"none";
+    $("a-to-kw").style.display = $("mode").value==="a-to-kw"?"block":"none";
+    $("vdrop").style.display  = $("mode").value==="vdrop" ?"block":"none";
   }
 
   function calc(){
-    if (!licenseOK()){
-      setStatus("License error");
-      $("kpi").textContent = "—";
-      $("kpiSub").textContent = "copyright missing";
-      $("detail").textContent = "Disabled";
-      return;
+    const mode=$("mode").value, phase=$("phase").value;
+    const V=num($("voltage").value);
+    const root = phase==="three"?Math.sqrt(3):1;
+
+    let kpi="—", sub="入力すると自動計算", st="Ready";
+    let log=[];
+
+    if(mode==="kw-to-a" && V && num($("kw").value)){
+      const kW=num($("kw").value);
+      const I=kW*1000*(1+M)/(V*root*PF*EFF);
+      kpi=I.toFixed(2)+" A";
+      sub="kW → A";
+      st="OK";
     }
 
-    const mode  = $("mode").value;
-    const phase = $("phase").value;
-
-    const V = num($("voltage").value, 0);
-    const root = (phase === "three") ? Math.sqrt(3) : 1;
-
-    let kpi = "—";
-    let sub = "—";
-    let status = "Ready";
-
-    const lines = [];
-    lines.push(`Mode: ${mode}`);
-    lines.push(`Phase: ${phase}`);
-    lines.push(`V=${V}  pf=${PF}  eff=${EFF}  margin=${Math.round(MARGIN*100)}%`);
-    lines.push(`Install=${INSTALL}  Temp=${TEMP}℃`);
-
-    if (mode === "kw-to-a"){
-      if (!hasAll("voltage","kw")){
-        status = "Ready";
-        sub = "電圧とkWを入力";
-      } else {
-        const kW = num($("kw").value, 0);
-        const P = kW * 1000 * (1 + MARGIN);
-
-        if (V <= 0 || kW <= 0){
-          status = "Input error";
-          sub = "入力の形式を確認";
-        } else {
-          const I = P / (V * root * PF * EFF);
-          kpi = I.toFixed(2) + " A";
-          sub = `kW=${kW}  (設計マージン込み)`;
-          status = "OK";
-          lines.push(`kW=${kW}`);
-          lines.push(`P(with margin)=${(P/1000).toFixed(3)} kW`);
-          lines.push(`I=${I.toFixed(4)} A`);
-        }
-      }
+    if(mode==="a-to-kw" && V && num($("amp").value)){
+      const I=num($("amp").value);
+      const kW=(I*V*root*PF*EFF/1000)/(1+M);
+      kpi=kW.toFixed(3)+" kW";
+      sub="A → kW";
+      st="OK";
     }
 
-    if (mode === "a-to-kw"){
-      if (!hasAll("voltage","amp")){
-        status = "Ready";
-        sub = "電圧とAを入力";
-      } else {
-        const I = num($("amp").value, 0);
-
-        if (V <= 0 || I <= 0){
-          status = "Input error";
-          sub = "入力の形式を確認";
-        } else {
-          const P = I * V * root * PF * EFF;
-          const kW = (P / 1000) / (1 + MARGIN);
-          kpi = kW.toFixed(3) + " kW";
-          sub = `A=${I}  (設計マージン除外値)`;
-          status = "OK";
-          lines.push(`I=${I}`);
-          lines.push(`P=${(P/1000).toFixed(4)} kW`);
-          lines.push(`kW(without margin)=${kW.toFixed(6)} kW`);
-        }
-      }
+    if(mode==="vdrop" && V && num($("ampVD").value) && num($("dist").value) && num($("sq").value)){
+      const I=num($("ampVD").value), L=num($("dist").value), A=num($("sq").value);
+      const rho=0.01724;
+      const R=rho*L/A;
+      const dV=phase==="three"?Math.sqrt(3)*I*R:2*I*R;
+      const pct=dV/V*100;
+      kpi=pct.toFixed(2)+" %";
+      sub="電圧降下";
+      st="OK";
     }
 
-    if (mode === "vdrop"){
-      // 入力揃ってないなら Ready（ここが今回のメイン修正）
-      if (!hasAll("voltage","ampVD","dist","sq")){
-        status = "Ready";
-        sub = "電圧/A/距離/sqを入力";
-      } else {
-        const I = num($("ampVD").value, 0);
-        const dist = num($("dist").value, 0); // one-way
-        const sq = num($("sq").value, 0);
-        const limit = num($("vlimit").value, 2.0);
-
-        if (V <= 0 || I <= 0 || dist <= 0 || sq <= 0){
-          status = "Input error";
-          sub = "入力の形式を確認";
-        } else {
-          // Cu ρ[Ω·mm²/m] = 0.01724 (代表値)
-          const rho = 0.01724;
-          const R = rho * dist / sq;
-
-          // single: ΔV = 2 I R, three: ΔV = √3 I R
-          const dV = (phase === "three") ? (Math.sqrt(3) * I * R) : (2 * I * R);
-          const pct = (dV / V) * 100;
-
-          kpi = pct.toFixed(2) + " %";
-          sub = `ΔV=${dV.toFixed(2)}V  limit=${limit}%`;
-
-          lines.push(`I=${I}A  L(one-way)=${dist}m  A=${sq}sq`);
-          lines.push(`ΔV=${dV.toFixed(4)}V  (${pct.toFixed(4)}%)`);
-          lines.push(`limit=${limit}%`);
-
-          status = (pct <= limit) ? "OK" : "NG";
-        }
-      }
-    }
-
-    setStatus(status);
-    $("kpi").textContent = kpi;
-    $("kpiSub").textContent = sub;
-    $("detail").textContent = lines.join("\n");
-    saveState();
+    $("status").textContent=st;
+    $("kpi").textContent=kpi;
+    $("kpiSub").textContent=sub;
+    $("detail").textContent=`Mode: ${mode}\nPhase: ${phase}\nV: ${V??"—"}`;
   }
 
-  function copyResult(){
-    const text = [
-      "Null Electric Calc (Basic)",
-      $("detail").textContent,
-      `Result: ${$("kpi").textContent} / ${$("kpiSub").textContent}`,
-      location.href,
-      "© 2025 Null / 516ockz"
-    ].join("\n");
-
-    navigator.clipboard?.writeText(text).then(() => {
-      setStatus("Copied");
-      setTimeout(()=>setStatus("Ready"), 900);
-    }).catch(() => {
-      setStatus("Copy failed");
-      setTimeout(()=>setStatus("Ready"), 900);
-    });
+  let t;
+  function auto(){
+    clearTimeout(t);
+    t=setTimeout(calc,120);
   }
 
-  function resetAll(){
-    localStorage.removeItem(KEY);
-    location.reload();
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    loadState();
-
-    // defaults（最低限）
-    if (!$("voltage").value) $("voltage").value = "200";
-    if (!$("vlimit").value) $("vlimit").value = "2.0";
-
-    updateModeUI();
-
-    $("mode").addEventListener("change", () => { updateModeUI(); saveState(); });
-    ["phase","voltage","kw","amp","ampVD","dist","sq","vlimit"].forEach(id => {
-      $(id)?.addEventListener("input", () => { saveState(); });
-    });
-
-    document.querySelectorAll("[data-dist]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        $("dist").value = btn.getAttribute("data-dist");
-        saveState();
-      });
-    });
-
-    $("calcBtn").addEventListener("click", calc);
-    $("copyBtn").addEventListener("click", copyResult);
-    $("resetBtn").addEventListener("click", resetAll);
-
-    // 起動時に計算しない（ここが大事）
-    setStatus("Ready");
+  ["mode","phase","voltage","kw","amp","ampVD","dist","sq"].forEach(id=>{
+    $(id)?.addEventListener("input",auto);
   });
+  $("mode").addEventListener("change",()=>{showPanels();auto();});
+
+  showPanels();
 })();
 </script>
 </body>
