@@ -15,7 +15,6 @@
       --muted:rgba(233,238,252,.62);
       --shadow:0 10px 30px rgba(0,0,0,.35);
       --r2:22px;
-
       --in-bg:rgba(0,0,0,.25);
 
       /* blue glow (控えめ) */
@@ -146,7 +145,7 @@
     .big2{
       margin-top:10px;
       font-size:22px;
-      font-weight:950;
+      font-weight:950; /* 太字枠（許容電流をここに置く） */
       color:rgba(233,238,252,.92);
       line-height:1.2;
     }
@@ -247,6 +246,9 @@
     <div class="card">
       <div class="big" id="outA">—</div>
       <div class="big2" id="outSq">Ready</div>
+
+      <div class="mini" id="outMini">PF=0.85 / 許容電流は表の固定条件</div>
+
       <footer id="null-copyright">© 2025 Null / 516ockz</footer>
     </div>
   </div>
@@ -346,8 +348,8 @@
       I = num($("amp").value);
     }
 
-    const outA = $("outA");
-    const outSq = $("outSq");
+    const outA = $("outA");     // でかい表示（モードで主役が変わる）
+    const outSq = $("outSq");   // 太字枠（A→推奨sqの時は許容電流を出す）
     const outMini = $("outMini");
 
     if (!Number.isFinite(I)){
@@ -357,21 +359,46 @@
       return;
     }
 
-    outA.textContent = `${I.toFixed(2)} A`;
-
     const sug = suggestSqByAmp(I);
     const cable = $("cable").value.toUpperCase();
     const cores = ($("cable").value==="cv") ? ` ${$("cores").value}C` : "";
+    const cableLabel = `${cable}${cores}`;
 
-    if (sug?.sq){
-      outSq.textContent = `${cable}${cores} → ${sug.sq} sq`;
-      outMini.textContent = `許容電流: ${sug.amp}A / I: ${I.toFixed(2)}A`;
-    } else if (sug?.maxSq){
-      outSq.textContent = `NG（最大でも不足）`;
-      outMini.textContent = `最大: ${cable}${cores} ${sug.maxSq}sq（${sug.maxAmp ?? "—"}A） / I: ${I.toFixed(2)}A`;
-    } else {
+    if (!sug){
+      outA.textContent = `${I.toFixed(2)} A`;
       outSq.textContent = "—";
       outMini.textContent = "テーブル未設定";
+      return;
+    }
+
+    // 最大でも不足
+    if (!sug.sq){
+      if (mode === "a-to-sq"){
+        outA.textContent = "NG";
+        outSq.textContent = `最大 ${cableLabel} ${sug.maxSq} sq`;
+        outMini.textContent = `許容: ${sug.maxAmp ?? "—"}A / 入力: ${I.toFixed(2)}A`;
+      } else {
+        outA.textContent = `${I.toFixed(2)} A`;
+        outSq.textContent = `NG（最大でも不足）`;
+        outMini.textContent = `最大: ${cableLabel} ${sug.maxSq}sq（${sug.maxAmp ?? "—"}A）`;
+      }
+      return;
+    }
+
+    // 通常（推奨あり）
+    const allowA = sug.amp;
+    const sq = sug.sq;
+
+    if (mode === "kw-to-a"){
+      // でかい：電流 / 太字：推奨sq / 小：許容電流
+      outA.textContent = `${I.toFixed(2)} A`;
+      outSq.textContent = `${cableLabel} → ${sq} sq`;
+      outMini.textContent = `許容電流: ${allowA}A`;
+    } else {
+      // でかい：推奨sq / 太字：許容電流 / 小：入力I
+      outA.textContent = `${sq} sq`;
+      outSq.textContent = `許容電流 ${allowA} A`;
+      outMini.textContent = `${cableLabel} / 入力 ${I.toFixed(2)}A`;
     }
   }
 
