@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pipe Size Calc MVP</title>
+<style>
+  :root{
+    --bg:#0b0f14;
+    --card:#101824;
+    --ink:#e8eef7;
+    --muted:#8aa0b6;
+    --line:#203041;
+    --accent:#4cc9f0;
+    --radius:18px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    padding:18px;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+  }
+  .wrap{max-width:820px;margin:0 auto}
+  .top{
+    display:flex;gap:12px;align-items:flex-end;justify-content:space-between;
+    margin-bottom:14px
+  }
+  h1{margin:0;font-size:20px;font-weight:800;letter-spacing:.2px}
+  .sub{margin-top:6px;color:var(--muted);font-size:12px;line-height:1.4}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px;
+  }
+  .row{
+    display:grid;
+    grid-template-columns: 150px 1fr 1fr 1fr 44px;
+    gap:10px;
+    align-items:end;
+    padding:10px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    margin-top:10px;
+  }
+  .row:first-child{margin-top:0}
+  label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px}
+  select,input{
+    width:100%;
+    padding:10px 10px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:#0d1520;
+    color:var(--ink);
+    outline:none;
+  }
+  input[type="number"]{appearance:textfield}
+  .mini{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:10px;
+  }
+  .btns{
+    display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;
+    margin-top:12px
+  }
+  button{
+    border:1px solid var(--line);
+    background:#0d1520;
+    color:var(--ink);
+    border-radius:14px;
+    padding:10px 12px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  button.primary{border-color:rgba(76,201,240,.35);box-shadow:0 0 0 2px rgba(76,201,240,.08) inset}
+  button.icon{
+    width:44px;height:44px;
+    display:grid;place-items:center;
+    padding:0;border-radius:14px;
+  }
+  .result{
+    margin-top:14px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .pill{
+    padding:12px 12px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:#0d1520;
+  }
+  .big{font-size:22px;font-weight:900;letter-spacing:.2px}
+  .note{margin-top:10px;color:var(--muted);font-size:12px;line-height:1.5}
+  .warn{color:#ffd166}
+  .hide{display:none}
+  @media (max-width:760px){
+    .row{grid-template-columns:1fr 1fr; align-items:start}
+    .row .colspan{grid-column:1 / -1}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>配管サイズ電卓 MVP</h1>
+      <div class="sub">
+        ＋で線を追加して合計断面積を出すところまで<br>
+        CVの外径は住電採用などの注意書きは後で入れる想定
+      </div>
+    </div>
+    <div>
+      <button class="primary" id="addBtn">＋ 追加</button>
+    </div>
+  </div>
+
+  <div class="card" id="rows"></div>
+
+  <div class="result">
+    <div class="pill">
+      <div class="sub">合計 断面積</div>
+      <div class="big"><span id="totalArea">0</span> mm²</div>
+      <div class="note">各線の外径から円面積で合計</div>
+    </div>
+    <div class="pill">
+      <div class="sub">次にやる枠</div>
+      <div class="big">占有率 → 呼び径</div>
+      <div class="note">ここは配管表を入れて判定を追加する</div>
+    </div>
+  </div>
+
+  <div class="note">
+    仕様メモ<br>
+    ・基本は外径mm入力で進む<br>
+    ・CVだけは 住電の外径表を入れて自動入力にできる構造<br>
+    ・CVVやMLFCやVCTもあとからテーブル追加できる
+  </div>
+</div>
+
+<script>
+/*
+  ここに住電の600V CV 仕上外径テーブルを入れる
+  key: `${core}C_${sq}`  value: 外径mm
+  例: CV_OD["3C_5.5"] = 15.2
+*/
+const CV_OD = {
+  // TODO: 住電の値をここに入れる
+}
+
+const WIRE_TYPES = [
+  { id:"CV",   name:"CV (600V)", hasAuto:true },
+  { id:"CVV",  name:"CVV",       hasAuto:false },
+  { id:"CVVS", name:"CVV-S",     hasAuto:false },
+  { id:"VCT",  name:"VCT",       hasAuto:false },
+  { id:"VCTF", name:"VCTF",      hasAuto:false },
+  { id:"MLFC", name:"MLFC",      hasAuto:false },
+  { id:"LKGB", name:"LKGB",      hasAuto:false },
+]
+
+let lineId = 0
+const state = new Map()
+
+function mm2Area(d){
+  const r = (Number(d) || 0) / 2
+  return Math.PI * r * r
+}
+
+function el(tag, attrs={}, children=[]){
+  const e = document.createElement(tag)
+  for(const [k,v] of Object.entries(attrs)){
+    if(k === "class") e.className = v
+    else if(k.startsWith("on") && typeof v === "function") e.addEventListener(k.slice(2), v)
+    else e.setAttribute(k, v)
+  }
+  for(const c of children){
+    if(typeof c === "string") e.appendChild(document.createTextNode(c))
+    else if(c) e.appendChild(c)
+  }
+  return e
+}
+
+function render(){
+  const host = document.getElementById("rows")
+  host.innerHTML = ""
+  for(const [id, row] of state.entries()){
+    host.appendChild(renderRow(id, row))
+  }
+  calc()
+}
+
+function renderRow(id, row){
+  const typeSel = el("select", { "data-id":id, "data-k":"type", oninput:onRowInput })
+  for(const t of WIRE_TYPES){
+    const opt = el("option", { value:t.id }, [t.name])
+    if(t.id === row.type) opt.selected = true
+    typeSel.appendChild(opt)
+  }
+
+  const autoWrap = el("div", { class: "mini" }, [
+    mkSelect("芯数", id, "core", row.core, ["1","2","3","4"]),
+    mkSelect("sq",   id, "sq",   row.sq,   ["2","3.5","5.5","8","14"]),
+    mkBtn("自動反映", () => applyAutoOD(id))
+  ])
+
+  const autoBox = el("div", { class: "colspan", id:`auto_${id}` }, [
+    el("label", {}, ["CV 自動入力"]),
+    autoWrap
+  ])
+
+  const odInp = el("input", {
+    type:"number", step:"0.1", min:"0",
+    value: row.od ?? "",
+    placeholder:"外径 mm",
+    "data-id":id, "data-k":"od",
+    oninput:onRowInput
+  })
+
+  const qtyInp = el("input", {
+    type:"number", step:"1", min:"1",
+    value: row.qty ?? 1,
+    "data-id":id, "data-k":"qty",
+    oninput:onRowInput
+  })
+
+  const delBtn = el("button", { class:"icon", title:"削除", onclick:() => { state.delete(id); render() } }, ["×"])
+
+  const rowEl = el("div", { class:"row" }, [
+    el("div", {}, [el("label", {}, ["線種"]), typeSel]),
+    el("div", {}, [el("label", {}, ["外径 mm"]), odInp]),
+    el("div", {}, [el("label", {}, ["本数"]), qtyInp]),
+    el("div", {}, [el("label", {}, ["面積 mm²"]), el("input", { value:"", disabled:"true", id:`area_${id}` })]),
+    delBtn,
+    autoBox
+  ])
+
+  toggleAuto(id, row.type)
+  return rowEl
+}
+
+function mkSelect(labelText, id, key, current, values){
+  const s = el("select", { "data-id":id, "data-k":key, oninput:onRowInput })
+  for(const v of values){
+    const opt = el("option", { value:v }, [v])
+    if(String(v) === String(current)) opt.selected = true
+    s.appendChild(opt)
+  }
+  return el("div", {}, [el("label", {}, [labelText]), s])
+}
+
+function mkBtn(text, fn){
+  return el("div", {}, [el("label", {}, [" "]), el("button", { onclick:fn }, [text])])
+}
+
+function toggleAuto(id, type){
+  const box = document.getElementById(`auto_${id}`)
+  if(!box) return
+  box.classList.toggle("hide", type !== "CV")
+}
+
+function applyAutoOD(id){
+  const row = state.get(id)
+  if(!row) return
+  const key = `${row.core}C_${row.sq}`
+  const od = CV_OD[key]
+  if(od){
+    row.od = od
+    render()
+  }else{
+    // 未登録ならそのまま
+    calc()
+    const note = document.querySelector(".note")
+    // 画面側の注意表示は必要なら後で入れる
+  }
+}
+
+function onRowInput(ev){
+  const id = Number(ev.target.getAttribute("data-id"))
+  const k  = ev.target.getAttribute("data-k")
+  const row = state.get(id)
+  if(!row) return
+
+  if(k === "type"){
+    row.type = ev.target.value
+    toggleAuto(id, row.type)
+  }else if(k === "od"){
+    row.od = ev.target.value
+  }else if(k === "qty"){
+    row.qty = Math.max(1, Number(ev.target.value || 1))
+  }else if(k === "core"){
+    row.core = ev.target.value
+  }else if(k === "sq"){
+    row.sq = ev.target.value
+  }
+  calc()
+}
+
+function calc(){
+  let total = 0
+  for(const [id,row] of state.entries()){
+    const od = Number(row.od || 0)
+    const qty = Math.max(1, Number(row.qty || 1))
+    const area = mm2Area(od) * qty
+    total += area
+    const out = document.getElementById(`area_${id}`)
+    if(out) out.value = area ? area.toFixed(1) : ""
+  }
+  document.getElementById("totalArea").textContent = total ? total.toFixed(1) : "0"
+}
+
+function addRow(){
+  const id = ++lineId
+  state.set(id, { type:"CV", od:"", qty:1, core:"3", sq:"5.5" })
+  render()
+}
+
+document.getElementById("addBtn").addEventListener("click", addRow)
+
+// 初期1行
+addRow()
+</script>
+</body>
+</html>
