@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Null Electric Calc</title>
+  <style>
+    :root {
+      --bg: #060b14;
+      --text: #eef7ff;
+      --muted: #8ea4bf;
+      --accent: #58c6ff;
+      --accent-2: #2c73ff;
+      --line-soft: rgba(88, 198, 255, 0.14);
+      --glow: 0 0 0 1px rgba(88, 198, 255, 0.22), 0 0 26px rgba(88, 198, 255, 0.16), inset 0 0 18px rgba(88, 198, 255, 0.04);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", "Noto Sans JP", sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(44, 115, 255, 0.18), transparent 34%),
+        radial-gradient(circle at bottom right, rgba(88, 198, 255, 0.12), transparent 28%),
+        linear-gradient(180deg, #050912 0%, #08111e 100%);
+      padding: 12px;
+    }
+    .app { width: min(100%, 520px); margin: 0 auto; }
+    .shell {
+      background: linear-gradient(180deg, rgba(8, 15, 28, 0.98) 0%, rgba(5, 10, 18, 0.98) 100%);
+      border: 1px solid rgba(88, 198, 255, 0.18);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 30px 70px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.03);
+    }
+    .header {
+      padding: 18px 16px 14px;
+      border-bottom: 1px solid rgba(88, 198, 255, 0.12);
+      background: linear-gradient(180deg, rgba(15, 32, 59, 0.42), rgba(10, 18, 31, 0));
+    }
+    .brand { font-size: 16px; font-weight: 700; letter-spacing: .06em; }
+    .sub { margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .body { padding: 14px; display: grid; gap: 12px; }
+    .panel {
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(10, 20, 37, .92), rgba(7, 14, 24, .92));
+      border: 1px solid rgba(88, 198, 255, 0.14);
+      box-shadow: 0 0 0 1px rgba(88, 198, 255, 0.10), 0 18px 44px rgba(0, 0, 0, 0.42), 0 0 28px rgba(44, 115, 255, 0.10);
+      padding: 13px;
+    }
+    .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .10em; margin-bottom: 9px; }
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .seg-btn {
+      min-height: 48px; border-radius: 14px; border: 1px solid rgba(88, 198, 255, 0.18);
+      background: linear-gradient(180deg, rgba(12, 26, 49, 0.94), rgba(8, 19, 35, 0.94));
+      color: var(--text); font-size: 16px; font-weight: 700; cursor: pointer;
+    }
+    .seg-btn.active {
+      border-color: rgba(88, 198, 255, 0.45);
+      box-shadow: 0 0 0 1px rgba(88, 198, 255, 0.22), 0 0 24px rgba(88, 198, 255, 0.14), inset 0 0 16px rgba(88, 198, 255, 0.12);
+      text-shadow: 0 0 12px rgba(88, 198, 255, 0.35);
+    }
+    .input-main, .select-main {
+      width: 100%; min-height: 54px; border-radius: 16px; border: 1px solid rgba(88, 198, 255, 0.20);
+      background: linear-gradient(180deg, rgba(10, 23, 44, 0.96), rgba(7, 15, 29, 0.96));
+      color: var(--text); padding: 16px; font-size: 18px; outline: none; appearance: none;
+    }
+    .input-main:focus, .select-main:focus { border-color: rgba(88, 198, 255, 0.46); box-shadow: var(--glow); }
+    .input-main::placeholder { color: #6e88a5; }
+    .select-wrap { position: relative; }
+    .select-wrap::after {
+      content: "▾"; position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+      color: #7ddcff; font-size: 14px; pointer-events: none;
+    }
+    .hero {
+      padding: 18px 16px; text-align: center;
+      background: radial-gradient(circle at center, rgba(88, 198, 255, 0.14), transparent 52%), linear-gradient(180deg, rgba(10, 28, 52, 0.95), rgba(8, 18, 33, 0.95));
+      border: 1px solid rgba(88, 198, 255, 0.22);
+      box-shadow: 0 0 0 1px rgba(88,198,255,.10), 0 0 30px rgba(44,115,255,.14), inset 0 0 30px rgba(88,198,255,.05);
+    }
+    .hero .title { color: #a9c3df; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; }
+    .hero .value { margin-top: 10px; font-size: clamp(46px, 15vw, 68px); line-height: 1; font-weight: 800; letter-spacing: -.04em; text-shadow: 0 0 22px rgba(88, 198, 255, 0.35); }
+    .hero .subline { margin-top: 12px; color: #bdd2e8; font-size: 14px; }
+    .hero .subline strong { color: #fff; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat { border-radius: 16px; padding: 12px 13px; background: linear-gradient(180deg, rgba(10, 20, 37, 0.96), rgba(7, 14, 24, 0.96)); border: 1px solid var(--line-soft); }
+    .stat-k { color: var(--muted); font-size: 11px; letter-spacing: .06em; margin-bottom: 8px; }
+    .stat-v { font-size: 24px; line-height: 1.1; font-weight: 700; word-break: break-word; }
+    .status-box { border-radius: 16px; padding: 12px 13px; background: linear-gradient(180deg, rgba(9, 18, 33, 0.96), rgba(8, 14, 24, 0.96)); border: 1px solid var(--line-soft); }
+    .status-k { color: var(--muted); font-size: 11px; margin-bottom: 7px; letter-spacing: .06em; }
+    .status-v { font-size: 18px; font-weight: 700; }
+    .ok { color: #dff6ff; }
+    .warn { color: #ffe5a6; }
+    .danger { color: #ffc3c3; }
+    .util-ok { color: #7ddcff; }
+    .util-warn { color: #ffd978; }
+    .util-danger { color: #ff8d8d; }
+    .note { color: var(--muted); font-size: 12px; line-height: 1.65; }
+    .badge { display: inline-flex; border-radius: 999px; padding: 7px 11px; background: rgba(9, 23, 40, 0.92); border: 1px solid rgba(88, 198, 255, 0.16); color: #cce2f6; font-size: 11px; }
+    @media (min-width: 680px) {
+      .conditions { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; }
+      .hero-wrap { display:grid; grid-template-columns: 1.25fr .75fr; gap:12px; }
+      .stats { grid-template-columns: repeat(4,1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="shell">
+      <div class="header">
+        <div class="brand">Null Electric Calc</div>
+        <div class="sub">A / kW 共通入力・スマホ優先版</div>
+      </div>
+      <div class="body">
+        <section class="panel">
+          <div class="label">Input Type</div>
+          <div class="mode-grid" style="margin-bottom:12px;">
+            <button id="modeA" class="seg-btn active" type="button">A</button>
+            <button id="modeKW" class="seg-btn" type="button">kW</button>
+          </div>
+          <div class="label" id="inputLabel">Current (A)</div>
+          <input id="inputValue" class="input-main" type="number" inputmode="decimal" step="0.1" min="0" placeholder="数値を入力" />
+        </section>
+
+        <section class="conditions">
+          <div class="panel">
+            <div class="label">Voltage</div>
+            <div class="select-wrap"><select id="voltagePreset" class="select-main">
+              <option value="single-100">単相 100V</option>
+              <option value="single-200">単相 200V</option>
+              <option value="three-200" selected>三相 200V</option>
+            </select></div>
+          </div>
+          <div class="panel">
+            <div class="label">Cable</div>
+            <div class="select-wrap"><select id="cableType" class="select-main">
+              <option value="CV" selected>CV</option>
+              <option value="CVT">CVT</option>
+              <option value="MLFC">MLFC</option>
+              <option value="LKGB">LKGB</option>
+            </select></div>
+          </div>
+          <div class="panel">
+            <div class="label">Cores</div>
+            <div class="select-wrap"><select id="cores" class="select-main">
+              <option value="1">単芯</option>
+              <option value="2">2芯</option>
+              <option value="3" selected>3芯</option>
+              <option value="4">4芯</option>
+            </select></div>
+          </div>
+        </section>
+
+        <section class="hero-wrap">
+          <div class="panel hero">
+            <div class="title">推奨サイズ</div>
+            <div class="value" id="recommendedSq">—</div>
+            <div class="subline">最小成立サイズ <strong id="minimumSq">—</strong></div>
+          </div>
+          <div style="display:grid; gap:10px;">
+            <div class="status-box"><div class="status-k">判定</div><div class="status-v" id="statusText">Ready</div></div>
+            <div class="status-box"><div class="status-k">備考</div><div class="status-v" id="statusNote">入力待ち</div></div>
+          </div>
+        </section>
+
+        <section class="stats">
+          <div class="stat"><div class="stat-k">電流</div><div class="stat-v" id="currentOut">—</div></div>
+          <div class="stat"><div class="stat-k">電力</div><div class="stat-v" id="powerOut">—</div></div>
+          <div class="stat"><div class="stat-k">許容電流</div><div class="stat-v" id="ampacityOut">—</div></div>
+          <div class="stat"><div class="stat-k">使用率</div><div class="stat-v" id="utilizationOut">—</div></div>
+        </section>
+
+        <section class="panel note">
+          <div class="badge">PF = 0.85</div>
+          <div style="margin-top:10px;">※ 許容電流は一般的な布設条件（ラック・ころがし想定）で計算しています。<br>※ PF=0.85 の固定条件です。</div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+<script>
+const PF = 0.85;
+const SQ_ORDER = [1.6, 2, 3.5, 5.5, 8, 14, 22, 38, 60, 100, 150, 200, 250, 325];
+const AMPACITY_TABLE = {
+  CV: {
+    1: {1.6: 27, 2: 35, 3.5: 48, 5.5: 62, 8: 76, 14: 108, 22: 139, 38: 192, 60: 247, 100: 319, 150: 400, 200: 464, 250: 533, 325: 617},
+    2: {1.6: 23, 2: 30, 3.5: 41, 5.5: 53, 8: 65, 14: 92, 22: 118, 38: 163, 60: 210, 100: 271, 150: 340, 200: 395, 250: 454, 325: 526},
+    3: {1.6: 19, 2: 27, 3.5: 37, 5.5: 49, 8: 61, 14: 86, 22: 110, 38: 151, 60: 194, 100: 250, 150: 314, 200: 365, 250: 419, 325: 486},
+    4: {1.6: 18, 2: 25, 3.5: 34, 5.5: 45, 8: 56, 14: 79, 22: 101, 38: 139, 60: 179, 100: 231, 150: 290, 200: 337, 250: 387, 325: 449}
+  },
+  CVT: {
+    1: {1.6: 25, 2: 33, 3.5: 45, 5.5: 58, 8: 72, 14: 102, 22: 132, 38: 182, 60: 235, 100: 303, 150: 380, 200: 441, 250: 507, 325: 587},
+    2: {1.6: 22, 2: 29, 3.5: 39, 5.5: 50, 8: 62, 14: 88, 22: 113, 38: 156, 60: 201, 100: 259, 150: 325, 200: 378, 250: 434, 325: 503},
+    3: {1.6: 18, 2: 25, 3.5: 35, 5.5: 46, 8: 57, 14: 80, 22: 103, 38: 141, 60: 182, 100: 235, 150: 295, 200: 343, 250: 394, 325: 458},
+    4: {1.6: 17, 2: 23, 3.5: 32, 5.5: 42, 8: 52, 14: 74, 22: 95, 38: 131, 60: 168, 100: 217, 150: 272, 200: 316, 250: 363, 325: 422}
+  },
+  MLFC: {
+    1: {1.6: 30, 2: 38, 3.5: 52, 5.5: 67, 8: 82, 14: 117, 22: 150, 38: 208, 60: 267, 100: 345, 150: 433, 200: 502, 250: 577, 325: 667},
+    2: {1.6: 26, 2: 34, 3.5: 46, 5.5: 59, 8: 72, 14: 103, 22: 132, 38: 183, 60: 235, 100: 304, 150: 381, 200: 442, 250: 508, 325: 588},
+    3: {1.6: 22, 2: 30, 3.5: 41, 5.5: 53, 8: 65, 14: 94, 22: 120, 38: 166, 60: 214, 100: 276, 150: 346, 200: 401, 250: 461, 325: 533},
+    4: {1.6: 21, 2: 28, 3.5: 38, 5.5: 49, 8: 60, 14: 87, 22: 111, 38: 154, 60: 198, 100: 255, 150: 320, 200: 371, 250: 426, 325: 493}
+  },
+  LKGB: {
+    1: {1.6: 28, 2: 36, 3.5: 49, 5.5: 63, 8: 78, 14: 111, 22: 143, 38: 198, 60: 255, 100: 329, 150: 413, 200: 479, 250: 550, 325: 636},
+    2: {1.6: 24, 2: 32, 3.5: 43, 5.5: 55, 8: 68, 14: 97, 22: 124, 38: 172, 60: 221, 100: 286, 150: 359, 200: 416, 250: 478, 325: 553},
+    3: {1.6: 20, 2: 28, 3.5: 39, 5.5: 50, 8: 62, 14: 89, 22: 114, 38: 157, 60: 202, 100: 261, 150: 327, 200: 380, 250: 436, 325: 504},
+    4: {1.6: 19, 2: 26, 3.5: 36, 5.5: 46, 8: 57, 14: 82, 22: 105, 38: 145, 60: 187, 100: 242, 150: 304, 200: 353, 250: 405, 325: 468}
+  }
+};
+
+const els = {
+  modeA: document.getElementById('modeA'),
+  modeKW: document.getElementById('modeKW'),
+  inputLabel: document.getElementById('inputLabel'),
+  inputValue: document.getElementById('inputValue'),
+  voltagePreset: document.getElementById('voltagePreset'),
+  cableType: document.getElementById('cableType'),
+  cores: document.getElementById('cores'),
+  recommendedSq: document.getElementById('recommendedSq'),
+  minimumSq: document.getElementById('minimumSq'),
+  currentOut: document.getElementById('currentOut'),
+  powerOut: document.getElementById('powerOut'),
+  ampacityOut: document.getElementById('ampacityOut'),
+  utilizationOut: document.getElementById('utilizationOut'),
+  statusText: document.getElementById('statusText'),
+  statusNote: document.getElementById('statusNote')
+};
+let mode = 'A';
+
+function formatNum(value, digits = 1) {
+  if (!Number.isFinite(value)) return '—';
+  return Number(value).toFixed(digits).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1');
+}
+function calcCurrentFromKW(kw, preset) {
+  if (preset === 'three-200') return kw * 1000 / (Math.sqrt(3) * 200 * PF);
+  if (preset === 'single-200') return kw * 1000 / (200 * PF);
+  return kw * 1000 / (100 * PF);
+}
+function calcKWFromCurrent(current, preset) {
+  if (preset === 'three-200') return (Math.sqrt(3) * 200 * current * PF) / 1000;
+  if (preset === 'single-200') return (200 * current * PF) / 1000;
+  return (100 * current * PF) / 1000;
+}
+function getTable() {
+  const cable = els.cableType.value;
+  const cores = Number(els.cores.value);
+  return AMPACITY_TABLE[cable] && AMPACITY_TABLE[cable][cores] ? AMPACITY_TABLE[cable][cores] : null;
+}
+function findMinimumSq(current, table) {
+  for (const sq of SQ_ORDER) {
+    if (table[sq] != null && table[sq] >= current) return sq;
+  }
+  return null;
+}
+function nextSq(currentSq) {
+  const idx = SQ_ORDER.indexOf(currentSq);
+  return (idx >= 0 && idx < SQ_ORDER.length - 1) ? SQ_ORDER[idx + 1] : currentSq;
+}
+function clearClasses() {
+  els.utilizationOut.className = 'stat-v';
+  els.statusText.className = 'status-v';
+}
+function clearOutput(status, note) {
+  els.recommendedSq.textContent = '—';
+  els.minimumSq.textContent = '—';
+  els.currentOut.textContent = '—';
+  els.powerOut.textContent = '—';
+  els.ampacityOut.textContent = '—';
+  els.utilizationOut.textContent = '—';
+  els.statusText.textContent = status || 'Ready';
+  els.statusNote.textContent = note || '入力待ち';
+  clearClasses();
+}
+function setMode(nextMode) {
+  mode = nextMode;
+  els.modeA.classList.toggle('active', mode === 'A');
+  els.modeKW.classList.toggle('active', mode === 'kW');
+  els.inputLabel.textContent = mode === 'A' ? 'Current (A)' : 'Power (kW)';
+  els.inputValue.placeholder = mode === 'A' ? '例 25' : '例 5.5';
+  recalc();
+}
+function recalc() {
+  const rawValue = els.inputValue.value.trim();
+  const raw = Number(rawValue);
+  if (rawValue === '' || !Number.isFinite(raw) || raw <= 0) {
+    clearOutput('Ready', '入力待ち');
+    return;
+  }
+  const preset = els.voltagePreset.value;
+  const table = getTable();
+  if (!table) {
+    clearOutput('Error', 'テーブル未設定');
+    els.statusText.classList.add('danger');
+    return;
+  }
+  const current = mode === 'A' ? raw : calcCurrentFromKW(raw, preset);
+  const power = mode === 'A' ? calcKWFromCurrent(raw, preset) : raw;
+  const minimumSq = findMinimumSq(current, table);
+  if (minimumSq == null) {
+    clearOutput('Over', 'テーブル上限超え');
+    els.currentOut.textContent = formatNum(current) + ' A';
+    els.powerOut.textContent = formatNum(power, 2) + ' kW';
+    els.statusText.classList.add('danger');
+    return;
+  }
+  const recommendedSq = nextSq(minimumSq);
+  const ampacity = table[recommendedSq];
+  const minimumAmpacity = table[minimumSq];
+  const utilRecommended = current / ampacity * 100;
+  const utilMinimum = current / minimumAmpacity * 100;
+
+  els.recommendedSq.textContent = formatNum(recommendedSq) + ' sq';
+  els.minimumSq.textContent = formatNum(minimumSq) + ' sq';
+  els.currentOut.textContent = formatNum(current) + ' A';
+  els.powerOut.textContent = formatNum(power, 2) + ' kW';
+  els.ampacityOut.textContent = formatNum(ampacity) + ' A';
+  els.utilizationOut.textContent = formatNum(utilRecommended) + ' %';
+
+  clearClasses();
+  if (utilRecommended >= 90) els.utilizationOut.classList.add('util-danger');
+  else if (utilRecommended >= 70) els.utilizationOut.classList.add('util-warn');
+  else els.utilizationOut.classList.add('util-ok');
+
+  let status = 'OK';
+  let note = '最小 ' + formatNum(minimumSq) + ' sq（' + formatNum(utilMinimum) + '%） / 推奨 ' + formatNum(recommendedSq) + ' sq';
+  if (recommendedSq === minimumSq) {
+    status = 'MAX';
+    note = '最小成立サイズと推奨サイズが同一です';
+    els.statusText.classList.add('warn');
+  } else {
+    els.statusText.classList.add('ok');
+  }
+  els.statusText.textContent = status;
+  els.statusNote.textContent = note;
+}
+
+els.modeA.addEventListener('click', function(){ setMode('A'); });
+els.modeKW.addEventListener('click', function(){ setMode('kW'); });
+els.inputValue.addEventListener('input', recalc);
+els.voltagePreset.addEventListener('change', recalc);
+els.cableType.addEventListener('change', recalc);
+els.cores.addEventListener('change', recalc);
+setMode('A');
+</script>
+</body>
+</html>
