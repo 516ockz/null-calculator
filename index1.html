@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nul | Between 0 and 1</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --main-color: #ffffff;
+            --accent-color: #ff0000;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--main-color);
+            font-family: 'JetBrains Mono', monospace; /* Nulの思想：コードとしてのタイポグラフィ */
+            overflow-x: hidden;
+        }
+
+        /* Hero Area */
+        #hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .brand-content {
+            z-index: 2;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 4rem;
+            letter-spacing: 0.5rem;
+            margin: 0;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .sub-text {
+            font-size: 1.2rem;
+            margin-top: 1rem;
+            opacity: 0.7;
+        }
+
+        /* Tool Connection Area (EXECUTE) */
+        #execute-tool {
+            padding: 100px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            background-color: #111; /* ツール風の区切り */
+            border-top: 1px solid #222;
+        }
+
+        .tool-preview-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 50px;
+        }
+
+        /* ツール風の入力フィールド（トップページ統合） */
+        .tool-preview-field {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            text-align: left;
+        }
+
+        .tool-preview-label {
+            font-size: 0.8rem;
+            color: #777;
+            text-transform: uppercase;
+        }
+
+        .tool-preview-input-like {
+            font-size: 1.2rem;
+            color: #ccc;
+        }
+
+        /* Tool Link Button */
+        .tool-link {
+            display: inline-block;
+            margin-top: 50px;
+            padding: 15px 40px;
+            border: 1px solid var(--main-color);
+            text-decoration: none;
+            color: var(--main-color);
+            transition: all 0.3s;
+        }
+
+        .tool-link:hover {
+            background-color: var(--main-color);
+            color: var(--bg-color);
+        }
+    </style>
+</head>
+<body>
+
+    <section id="hero">
+        <canvas id="particle-canvas"></canvas>
+        <div class="brand-content">
+            <h1>Nul</h1>
+            <div class="sub-text">Between 0 and 1</div>
+        </div>
+    </section>
+
+    <section id="execute-tool">
+        <p>Built from silence, shaped by function</p>
+        <div class="tool-preview-wrapper">
+            <div class="tool-preview-field">
+                <span class="tool-preview-label">Trunk Size Calc (幹線サイズ計算)</span>
+                <span class="tool-preview-input-like">_</span>
+            </div>
+            <div class="tool-preview-field">
+                <span class="tool-preview-label">Voltage Drop Calc (電圧降下計算)</span>
+                <span class="tool-preview-input-like">_</span>
+            </div>
+        </div>
+
+        <a href="https://516ockz.github.io/null-calculator/null-calculator-fixed-v4.html" class="tool-link">
+            EXECUTE: NULL CALCULATOR _
+        </a>
+    </section>
+
+    <script>
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let foxLogoParticles = []; // キツネロゴの粒子群
+        const foxLogoX = 100; // キツネロゴのX座標 (調整用)
+        const foxLogoY = 100; // キツネロゴのY座標 (調整用)
+
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            particles = [];
+            // 背景に静かに上昇する0/1粒子群
+            for(let i = 0; i < 150; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    text: Math.random() > 0.5 ? "0" : "1",
+                    size: Math.random() * 8 + 10,
+                    speed: Math.random() * 0.4 + 0.1,
+                    color: "rgba(255,255,255,0.05)"
+                });
+            }
+            // キツネロゴの粒子群 (image_0.pngImageDataを読み込むロジックをここに実装)
+            // ここでは簡易的に目の位置の粒子のみを生成
+            foxLogoParticles = [];
+            foxLogoParticles.push({
+                x: canvas.width / 2 + 5, // キツネの瞳
+                y: canvas.height / 2 - 20,
+                text: "0", // 0/1高速切り替え
+                size: 15,
+                speed: 0,
+                color: "rgba(255,0,0,0.8)" // 目の赤い点灯
+            });
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = "12px monospace";
+
+            // 背景粒子の描画
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.fillText(p.text, p.x, p.y);
+                p.y -= p.speed;
+                if(p.y < 0) p.y = canvas.height;
+            });
+
+            // キツネロゴ粒子の描画 (集合・揺らぎロジックを追加)
+            foxLogoParticles.forEach(p => {
+                ctx.fillStyle = p.color;
+                // 目の揺らぎロジック (0/1高速切り替え)
+                p.text = Math.random() > 0.5 ? "1" : "0";
+                ctx.fillText(p.text, p.x, p.y);
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', init);
+        init();
+        animate();
+    </script>
+</body>
+</html>
